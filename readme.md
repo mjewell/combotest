@@ -2,7 +2,7 @@
 
 A testing utility for exhaustively testing combinations of variables. Makes it easy to define expected outcomes, and generates a nice, easy-to-read table of results.
 
-A common use case for this would be to determine which users have access to a given feature. It might be conditional based on roles, feature flags, product tiers, or any other internal logic.
+Combotest is primarily designed for use cases where you have many combinations of variables but only a small set of distinct outcomes. A common use case for this would be to determine which users have access to a given feature. It might be conditional based on roles, feature flags, product tiers, or any other internal logic. As a counterexample, you wouldn't necessarily want to use it for something like testing an addition function where every combination of inputs may produce a distinct output.
 
 For example, let's say you want to test this simple function:
 
