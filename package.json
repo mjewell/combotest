@@ -1,0 +1,31 @@
+{
+  "name": "combotest",
+  "version": "1.0.0",
+  "description": "",
+  "type": "module",
+  "files": [
+    "dist"
+  ],
+  "main": "./dist/combotest.umd.cjs",
+  "module": "./dist/combotest.js",
+  "exports": {
+    ".": {
+      "import": "./dist/combotest.js",
+      "require": "./dist/combotest.umd.cjs"
+    }
+  },
+  "scripts": {
+    "build": "vite build",
+    "dev": "vite build --watch",
+    "test": "vitest"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "vitest": "^3.1.4"
+  },
+  "devDependencies": {
+    "vite": "^6.3.5"
+  }
+}
