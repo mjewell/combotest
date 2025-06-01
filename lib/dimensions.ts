@@ -73,7 +73,7 @@ function difference<T>(
 function createGroupedDimension<T, Context, G extends GroupType<T>>(
   def: DimensionDef<T, Context>,
   groups: G,
-  options: Options<T>
+  options: Options<NoInfer<T>>
 ): Dimension<T, Context, G> {
   if (reservedGroupNames.some((name) => name in groups)) {
     throw new Error(
@@ -121,10 +121,7 @@ function createGroupedDimension<T, Context, G extends GroupType<T>>(
 
       return createGroupedDimension(
         def as DimensionDef<boolean, Context>,
-        {
-          false: [false],
-          true: [true],
-        },
+        { false: [false], true: [true] },
         { ...options, equalityFn: defaultOptions.equalityFn }
       );
     },
