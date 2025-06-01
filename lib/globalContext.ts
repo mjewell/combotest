@@ -5,7 +5,7 @@ export const globalContext = new Map<GlobalContextKey, GlobalContextValue>();
 
 export function addGlobalContext(
   key: GlobalContextKey,
-  value: GlobalContextValue
+  value: GlobalContextValue,
 ) {
   if (globalContext.has(key)) {
     throw new Error("This dimension is already defined");

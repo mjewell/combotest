@@ -3,9 +3,7 @@
   "version": "1.0.0",
   "description": "",
   "type": "module",
-  "files": [
-    "dist"
-  ],
+  "files": ["dist"],
   "main": "./dist/combotest.umd.cjs",
   "module": "./dist/combotest.js",
   "exports": {
@@ -18,6 +16,8 @@
   "scripts": {
     "build": "vite build",
     "dev": "vite build --watch",
+    "lint": "biome check",
+    "lint:fix": "biome check --organize-imports-enabled=true --write",
     "test": "vitest"
   },
   "keywords": [],
@@ -27,6 +27,7 @@
     "vitest": ">=3.0.0"
   },
   "devDependencies": {
+    "@biomejs/biome": "1.9.4",
     "@microsoft/api-extractor": "^7.52.8",
     "@types/node": "^22.15.29",
     "vite": "^6.3.5",

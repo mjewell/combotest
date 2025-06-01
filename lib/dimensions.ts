@@ -1,5 +1,5 @@
 import { addGlobalContext, removeGlobalContext } from "./globalContext";
-import { Required } from "./types";
+import type { Required } from "./types";
 
 type PartialOptions<T> = {
   equalityFn?: (a: T, b: T) => boolean;
@@ -44,11 +44,11 @@ type GroupType<T> = {
 export type Dimension<
   T,
   Context,
-  G extends GroupType<T> = Record<never, never>
+  G extends GroupType<T> = Record<never, never>,
 > = Required<DimensionDef<T, Context>, "formatValue"> & {
   /** creates groups with the corresponding names and values, in addition to an `other` group for the unspecified values, and an `all` group for all possible values */
   group: <NewG extends GroupType<T>>(
-    groups: NewG
+    groups: NewG,
   ) => Dimension<T, Context, NewG>;
   /** creates a `true` group for [true], and a `false` group for [false]. `other` will be empty. */
   bool: () => Dimension<boolean, Context, { false: [false]; true: [true] }>;
@@ -63,23 +63,23 @@ export type Dimension<
 function difference<T>(
   a: readonly T[],
   b: readonly T[],
-  equalityFn: (a: T, b: T) => boolean = (a, b) => a === b
+  equalityFn: (a: T, b: T) => boolean = (a, b) => a === b,
 ): T[] {
   return a.filter(
-    (value) => b.findIndex((other) => equalityFn(value, other)) === -1
+    (value) => b.findIndex((other) => equalityFn(value, other)) === -1,
   );
 }
 
 function createGroupedDimension<T, Context, G extends GroupType<T>>(
   def: DimensionDef<T, Context>,
   groups: G,
-  options: Options<NoInfer<T>>
+  options: Options<NoInfer<T>>,
 ): Dimension<T, Context, G> {
   if (reservedGroupNames.some((name) => name in groups)) {
     throw new Error(
       `Cannot use [${reservedGroupNames.join(
-        ", "
-      )}] as group names, they are reserved`
+        ", ",
+      )}] as group names, they are reserved`,
     );
   }
 
@@ -89,8 +89,8 @@ function createGroupedDimension<T, Context, G extends GroupType<T>>(
   if (allGroupValuesSet.size !== allGroupValues.length) {
     throw new Error(
       `Each value must appear in exactly one group: ${allGroupValues.join(
-        ", "
-      )}`
+        ", ",
+      )}`,
     );
   }
 
@@ -115,14 +115,14 @@ function createGroupedDimension<T, Context, G extends GroupType<T>>(
 
       if (!isBooleanDimension) {
         throw new Error(
-          "This dimension is not a boolean dimension. Expected values to be exactly [false, true]."
+          "This dimension is not a boolean dimension. Expected values to be exactly [false, true].",
         );
       }
 
       return createGroupedDimension(
         def as DimensionDef<boolean, Context>,
         { false: [false], true: [true] },
-        { ...options, equalityFn: defaultOptions.equalityFn }
+        { ...options, equalityFn: defaultOptions.equalityFn },
       );
     },
     whenValue(value, callback) {
@@ -132,11 +132,15 @@ function createGroupedDimension<T, Context, G extends GroupType<T>>(
     },
     whenNotValue(value, callback) {
       const values = difference(def.values, [value], options.equalityFn);
-      values.forEach((value) => this.whenValue(value, callback));
+      for (const value of values) {
+        this.whenValue(value, callback);
+      }
     },
     when(groupName, callback) {
       const values = allGroups[groupName];
-      values.forEach((value) => this.whenValue(value, callback));
+      for (const value of values) {
+        this.whenValue(value, callback);
+      }
     },
   };
 }
@@ -144,7 +148,7 @@ function createGroupedDimension<T, Context, G extends GroupType<T>>(
 /** create a new dimension where all provided values are in the `other` group */
 export function createDimension<T, Context>(
   def: DimensionDef<T, Context>,
-  opts?: PartialOptions<T>
+  opts?: PartialOptions<T>,
 ) {
   const options = { ...defaultOptions, ...opts };
   return createGroupedDimension(def, {}, options);
@@ -152,7 +156,7 @@ export function createDimension<T, Context>(
 
 /** create a new dimension with the values [false, true] and corresponding groups */
 export function createBooleanDimension<Context>(
-  def: Omit<DimensionDef<boolean, Context>, "values">
+  def: Omit<DimensionDef<boolean, Context>, "values">,
 ) {
   return createDimension({ ...def, values: [false, true] }).bool();
 }

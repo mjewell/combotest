@@ -1,13 +1,13 @@
+import { expect, it } from "vitest";
 import { createBooleanDimension, createDimension } from "./dimensions";
 import { TestOutcomeMatrix } from "./testOutcomeMatrix";
-import { it, expect } from "vitest";
 
 type User = {
   role: string;
 };
 
 function isAllowed({ user, feature }: { user: User; feature: boolean }) {
-  return user.role === "admin" && feature;
+  return user.role === "admin" || feature;
 }
 
 const roles = createDimension({

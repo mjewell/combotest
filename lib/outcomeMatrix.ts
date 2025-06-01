@@ -8,9 +8,9 @@ type DimensionWithValue<D extends Dimension<unknown, unknown>> = D & {
 };
 
 export class OutcomeMatrix<
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- inference works better with `any` for some reason
+  // biome-ignore lint/suspicious/noExplicitAny: inference works better with `any` for some reason
   Dimensions extends Dimension<any, any>[],
-  Outcomes extends string
+  Outcomes extends string,
 > {
   private outcomeRegistry: {
     outcome: Outcomes;
@@ -37,7 +37,7 @@ export class OutcomeMatrix<
       throw new Error(
         `Default outcome "${
           this.defaultOutcome
-        }" is not defined in the outcomes list: ${this.outcomes.join(", ")}`
+        }" is not defined in the outcomes list: ${this.outcomes.join(", ")}`,
       );
     }
   }
@@ -45,10 +45,10 @@ export class OutcomeMatrix<
   private forEachInternal(
     callback: (
       dimensionValues: DimensionWithValue<Dimensions[number]>[],
-      outcome: Outcomes
+      outcome: Outcomes,
     ) => void,
     filter: (outcome: Outcomes) => boolean = () => true,
-    dimensionValues: DimensionWithValue<Dimensions[number]>[] = []
+    dimensionValues: DimensionWithValue<Dimensions[number]>[] = [],
   ) {
     const def = this.dimensions[dimensionValues.length];
 
@@ -60,33 +60,31 @@ export class OutcomeMatrix<
       return;
     }
 
-    def.values.forEach((value) => {
-      this.forEachInternal(callback, filter, [
-        ...dimensionValues,
-        { ...def, value },
-      ]);
-    });
+    for (const value of def.values) {
+      const newDimensionValues = [...dimensionValues, { ...def, value }];
+      this.forEachInternal(callback, filter, newDimensionValues);
+    }
   }
 
   forEach(
     callback: (
       dimensionValues: DimensionWithValue<Dimensions[number]>[],
-      outcome: Outcomes
+      outcome: Outcomes,
     ) => void,
-    filter: (outcome: Outcomes) => boolean = () => true
+    filter: (outcome: Outcomes) => boolean = () => true,
   ) {
     this.forEachInternal(callback, filter);
   }
 
   markOutcome(
     dimensions: Map<() => void, DimensionValue<Dimensions[number]>>,
-    outcome: Outcomes
+    outcome: Outcomes,
   ) {
     if (!this.outcomes.includes(outcome)) {
       throw new Error(
         `Outcome "${outcome}" is not defined in the outcomes list: ${this.outcomes.join(
-          ", "
-        )}`
+          ", ",
+        )}`,
       );
     }
 
@@ -94,7 +92,7 @@ export class OutcomeMatrix<
   }
 
   getOutcome(
-    dimensionValues: DimensionWithValue<Dimensions[number]>[]
+    dimensionValues: DimensionWithValue<Dimensions[number]>[],
   ): Outcomes {
     if (dimensionValues.length === 0) {
       throw new Error("No dimensions provided");
@@ -106,12 +104,12 @@ export class OutcomeMatrix<
 
         if (!dimensionValue) {
           throw new Error(
-            `Dimension not found. Are you defining outcomes with a dimension that's not specified in 'dimensions'?`
+            `Dimension not found. Are you defining outcomes with a dimension that's not specified in 'dimensions'?`,
           );
         }
 
         return value === dimensionValue.value;
-      })
+      }),
     );
 
     if (matchingEntries.length === 0) {
@@ -124,7 +122,7 @@ export class OutcomeMatrix<
       throw new Error(
         `Multiple outcomes found for ${dimensionValues
           .map((v) => v.value)
-          .join(", ")}: ${Array.from(uniqueOutcomes).join(", ")}`
+          .join(", ")}: ${Array.from(uniqueOutcomes).join(", ")}`,
       );
     }
 

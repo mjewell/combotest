@@ -1,18 +1,18 @@
-import { UnionToIntersection } from "./types";
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
+import type { UnionToIntersection } from "./types";
 
 import type { Dimension } from "./dimensions";
-import { OutcomeMatrix } from "./outcomeMatrix";
 import { globalContext } from "./globalContext";
+import { OutcomeMatrix } from "./outcomeMatrix";
 
 type ApplyDimensionsCallback<D extends Dimension<unknown, unknown>> = (
-  context: UnionToIntersection<Parameters<D["apply"]>[1]>
+  context: UnionToIntersection<Parameters<D["apply"]>[1]>,
 ) => void;
 
 export class TestOutcomeMatrix<
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- inference works better with `any` for some reason
+  // biome-ignore lint/suspicious/noExplicitAny: inference works better with `any` for some reason
   Dimensions extends Dimension<any, any>[],
-  Outcomes extends string
+  Outcomes extends string,
 > extends OutcomeMatrix<Dimensions, Outcomes> {
   columnWidths: number[];
 
@@ -21,15 +21,18 @@ export class TestOutcomeMatrix<
   ) {
     super(...args);
     this.columnWidths = this.dimensions.map((d) =>
-      Math.max(d.header.length, ...d.values.map((v) => d.formatValue(v).length))
+      Math.max(
+        d.header.length,
+        ...d.values.map((v) => d.formatValue(v).length),
+      ),
     );
   }
 
   defineOutcomes(
     callback: (
       outcomes: { [K in Outcomes]: () => void },
-      dimensions: Dimensions
-    ) => void
+      dimensions: Dimensions,
+    ) => void,
   ) {
     globalContext.clear();
 
@@ -37,7 +40,7 @@ export class TestOutcomeMatrix<
       this.outcomes.map((outcome) => [
         outcome,
         () => this.markOutcome(globalContext, outcome),
-      ])
+      ]),
     ) as { [K in Outcomes]: () => void };
 
     callback(outcomeLookup, this.dimensions);
@@ -45,7 +48,7 @@ export class TestOutcomeMatrix<
 
   private stringifyRow(row: string[]) {
     return [...row.map((c, i) => c.padEnd(this.columnWidths[i], " "))].join(
-      " | "
+      " | ",
     );
   }
 
@@ -58,41 +61,38 @@ export class TestOutcomeMatrix<
   private testOutcomesInternal(
     callback: (
       applyDimensions: ApplyDimensionsCallback<Dimensions[number]>,
-      outcome: Outcomes
+      outcome: Outcomes,
     ) => void,
-    filter: (outcome: Outcomes) => boolean = () => true
+    filter: (outcome: Outcomes) => boolean = () => true,
   ) {
     this.forEach((dimensionValues, outcome) => {
       const dimensionValuesArray = Object.values(dimensionValues);
-      describe(
-        this.stringifyRow(
-          dimensionValuesArray.map((d) => d.formatValue(d.value))
-        ),
-        () => {
-          dimensionValuesArray.forEach((dimension) => {
-            dimension.applyInDescribe?.(dimension.value);
-          });
-
-          const applyDimensions: ApplyDimensionsCallback<Dimensions[number]> = (
-            context
-          ) => {
-            dimensionValuesArray.forEach((dimension) => {
-              dimension.apply(dimension.value, context);
-            });
-          };
-
-          callback(applyDimensions, outcome);
+      describe(this.stringifyRow(
+        dimensionValuesArray.map((d) => d.formatValue(d.value)),
+      ), () => {
+        for (const dimension of dimensionValuesArray) {
+          dimension.applyInDescribe?.(dimension.value);
         }
-      );
+
+        const applyDimensions: ApplyDimensionsCallback<Dimensions[number]> = (
+          context,
+        ) => {
+          for (const dimension of dimensionValuesArray) {
+            dimension.apply(dimension.value, context);
+          }
+        };
+
+        callback(applyDimensions, outcome);
+      });
     }, filter);
   }
 
   testOutcomes(
     callback: (
       applyDimensions: ApplyDimensionsCallback<Dimensions[number]>,
-      outcome: Outcomes
+      outcome: Outcomes,
     ) => void,
-    opts: { order?: "dimensions" | "outcomes" } = {}
+    opts: { order?: "dimensions" | "outcomes" } = {},
   ) {
     const options = { order: "outcomes", ...opts };
 
@@ -100,12 +100,12 @@ export class TestOutcomeMatrix<
     if (options.order === "dimensions") {
       this.testOutcomesInternal(callback);
     } else {
-      this.outcomes.forEach((targetOutcome) => {
+      for (const targetOutcome of this.outcomes) {
         this.testOutcomesInternal(
           callback,
-          (outcome) => outcome === targetOutcome
+          (outcome) => outcome === targetOutcome,
         );
-      });
+      }
     }
   }
 }
