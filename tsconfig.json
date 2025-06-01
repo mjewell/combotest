@@ -2,7 +2,8 @@
   "compilerOptions": {
     "module": "ESNext",
     "moduleResolution": "bundler",
-    "strict": true
+    "strict": true,
+    "types": ["vitest/globals"]
   },
   "include": ["lib/**/*"]
 }

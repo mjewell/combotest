@@ -1,6 +1,6 @@
 import { expect, it } from "vitest";
+import { TestOutcomeMatrix } from "./TestOutcomeMatrix";
 import { createBooleanDimension, createDimension } from "./dimensions";
-import { TestOutcomeMatrix } from "./testOutcomeMatrix";
 
 type User = {
   role: string;

@@ -1,4 +1,6 @@
+import { ImpossibleError } from "./ImpossibleError";
 import type { Dimension } from "./dimensions";
+import { subtractArrays } from "./utils";
 
 type DimensionValue<D extends Dimension<unknown, unknown>> =
   D["values"][number];
@@ -31,6 +33,10 @@ export class OutcomeMatrix<
     this.dimensions = dimensions;
     this.outcomes = outcomes;
     this.defaultOutcome = defaultOutcome;
+
+    if (this.dimensions.length === 0) {
+      throw new Error("No dimensions provided");
+    }
 
     if (!this.outcomes.includes(this.defaultOutcome)) {
       throw new Error(
@@ -87,14 +93,29 @@ export class OutcomeMatrix<
       );
     }
 
+    dimensions.forEach((_, key) => {
+      if (!this.dimensions.find((d) => d.apply === key)) {
+        throw new Error(
+          `Dimension not found. Are you defining outcomes with a dimension that's not specified in "dimensions"?`,
+        );
+      }
+    });
+
     this.outcomeRegistry.push({ outcome, dimensions: new Map(dimensions) });
   }
 
   getOutcome(
     dimensionValues: DimensionWithValue<Dimensions[number]>[],
   ): Outcomes {
-    if (dimensionValues.length === 0) {
-      throw new Error("No dimensions provided");
+    const dimensionsKeys = this.dimensions.map((d) => d.apply);
+    const dimensionValuesKeys = dimensionValues.map((dv) => dv.apply);
+
+    if (subtractArrays(dimensionsKeys, dimensionValuesKeys).length > 0) {
+      throw new Error("Some dimension values were not provided");
+    }
+
+    if (subtractArrays(dimensionValuesKeys, dimensionsKeys).length > 0) {
+      throw new Error("Some unexpected dimension values were provided");
     }
 
     const matchingEntries = this.outcomeRegistry.filter((entry) =>
@@ -102,9 +123,7 @@ export class OutcomeMatrix<
         const dimensionValue = dimensionValues.find((dv) => dv.apply === key);
 
         if (!dimensionValue) {
-          throw new Error(
-            `Dimension not found. Are you defining outcomes with a dimension that's not specified in 'dimensions'?`,
-          );
+          throw new ImpossibleError("Dimension not found");
         }
 
         return value === dimensionValue.value;

@@ -18,7 +18,7 @@
     "dev": "vite build --watch",
     "lint": "biome check",
     "lint:fix": "biome check --organize-imports-enabled=true --write",
-    "test": "vitest"
+    "test": "vitest --typecheck"
   },
   "keywords": [],
   "author": "",

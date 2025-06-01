@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
 import type { UnionToIntersection } from "./types";
 
+import { OutcomeMatrix } from "./OutcomeMatrix";
 import type { Dimension } from "./dimensions";
 import { globalContext } from "./globalContext";
-import { OutcomeMatrix } from "./outcomeMatrix";
 
 type ApplyDimensionsCallback<D extends Dimension<unknown, unknown>> = (
   context: UnionToIntersection<Parameters<D["apply"]>[1]>,
@@ -15,10 +15,20 @@ export class TestOutcomeMatrix<
 > extends OutcomeMatrix<Dimensions, Outcomes> {
   columnWidths: number[];
 
-  constructor(
-    ...args: ConstructorParameters<typeof OutcomeMatrix<Dimensions, Outcomes>>
-  ) {
-    super(...args);
+  constructor({
+    dimensions,
+    outcomes,
+    defaultOutcome,
+  }: {
+    dimensions: Dimensions;
+    outcomes: Outcomes[];
+    defaultOutcome: NoInfer<Outcomes>;
+  }) {
+    super({
+      dimensions,
+      outcomes,
+      defaultOutcome,
+    });
     this.columnWidths = this.dimensions.map((d) =>
       Math.max(
         d.header.length,

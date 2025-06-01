@@ -1,5 +1,6 @@
 import { addGlobalContext, removeGlobalContext } from "./globalContext";
 import type { Required } from "./types";
+import { difference, subtractArrays } from "./utils";
 
 type PartialOptions<T> = {
   equalityFn?: (a: T, b: T) => boolean;
@@ -60,16 +61,6 @@ export type Dimension<
   when(groupName: keyof G | ReservedGroupNames, callback: () => void): void;
 };
 
-function difference<T>(
-  a: readonly T[],
-  b: readonly T[],
-  equalityFn: (a: T, b: T) => boolean = (a, b) => a === b,
-): T[] {
-  return a.filter(
-    (value) => b.findIndex((other) => equalityFn(value, other)) === -1,
-  );
-}
-
 function createGroupedDimension<T, Context, G extends GroupType<T>>(
   def: DimensionDef<T, Context>,
   groups: G,
@@ -83,20 +74,44 @@ function createGroupedDimension<T, Context, G extends GroupType<T>>(
     );
   }
 
+  if (Object.values(groups).some((group) => group.length === 0)) {
+    throw new Error(
+      'Cannot create an empty group. Should you use the "other" group?',
+    );
+  }
+
   const allGroupValues = Object.values(groups).flat();
+
+  const unexpectedValues = allGroupValues.filter(
+    (v) => !def.values.some((d) => options.equalityFn(v, d)),
+  );
+
+  if (unexpectedValues.length > 0) {
+    throw new Error(
+      `Cannot create a group with value [${unexpectedValues
+        .map((v) => JSON.stringify(v))
+        .join(
+          ", ",
+        )}] because it is not defined in the dimension values [${def.values
+        .map((v) => JSON.stringify(v))
+        .join(", ")}]`,
+    );
+  }
 
   const allGroupValuesSet = new Set(allGroupValues);
   if (allGroupValuesSet.size !== allGroupValues.length) {
     throw new Error(
-      `Each value must appear in exactly one group: ${allGroupValues.join(
-        ", ",
-      )}`,
+      `Each value must appear in exactly one group but found [${Array.from(
+        allGroupValuesSet.values(),
+      )
+        .map((v) => JSON.stringify(v))
+        .join(", ")}] in multiple groups`,
     );
   }
 
   const allGroups = {
     ...groups,
-    other: difference(def.values, allGroupValues, options.equalityFn),
+    other: subtractArrays(def.values, allGroupValues, options.equalityFn),
     all: def.values,
   };
 
@@ -109,9 +124,7 @@ function createGroupedDimension<T, Context, G extends GroupType<T>>(
     group,
     bool: () => {
       const isBooleanDimension =
-        def.values.length === 2 &&
-        difference(def.values as unknown as boolean[], [false, true]).length ===
-          0;
+        difference<unknown>(def.values, [false, true]).length === 0;
 
       if (!isBooleanDimension) {
         throw new Error(
@@ -131,7 +144,7 @@ function createGroupedDimension<T, Context, G extends GroupType<T>>(
       removeGlobalContext(def.apply);
     },
     whenNotValue(value, callback) {
-      const values = difference(def.values, [value], options.equalityFn);
+      const values = subtractArrays(def.values, [value], options.equalityFn);
       for (const value of values) {
         this.whenValue(value, callback);
       }
@@ -151,6 +164,11 @@ export function createDimension<T, Context>(
   opts?: PartialOptions<T>,
 ) {
   const options = { ...defaultOptions, ...opts };
+
+  if (def.values.length === 0) {
+    throw new Error("Dimensions must have at least one value defined");
+  }
+
   return createGroupedDimension(def, {}, options);
 }
 
