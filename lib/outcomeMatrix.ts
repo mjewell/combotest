@@ -27,7 +27,7 @@ export class OutcomeMatrix<
   }: {
     dimensions: Dimensions;
     outcomes: Outcomes[];
-    defaultOutcome: Outcomes;
+    defaultOutcome: NoInfer<Outcomes>;
   }) {
     this.dimensions = dimensions;
     this.outcomes = outcomes;
