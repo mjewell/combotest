@@ -10,8 +10,7 @@ type ApplyDimensionsCallback<D extends Dimension<unknown, unknown>> = (
 ) => void;
 
 export class TestOutcomeMatrix<
-  // biome-ignore lint/suspicious/noExplicitAny: inference works better with `any` for some reason
-  Dimensions extends Dimension<any, any>[],
+  Dimensions extends Dimension<unknown, unknown>[],
   Outcomes extends string,
 > extends OutcomeMatrix<Dimensions, Outcomes> {
   columnWidths: number[];

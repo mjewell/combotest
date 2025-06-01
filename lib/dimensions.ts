@@ -51,13 +51,13 @@ export type Dimension<
     groups: NewG,
   ) => Dimension<T, Context, NewG>;
   /** creates a `true` group for [true], and a `false` group for [false]. `other` will be empty. */
-  bool: () => Dimension<boolean, Context, { false: [false]; true: [true] }>;
+  bool(): Dimension<boolean, Context, { false: [false]; true: [true] }>;
   /** calls the callback with the value */
-  whenValue: (value: T, callback: () => void) => void;
+  whenValue(value: T, callback: () => void): void;
   /** calls the callback with all other values */
-  whenNotValue: (value: T, callback: () => void) => void;
+  whenNotValue(value: T, callback: () => void): void;
   /** calls the callback with each value in the group provided */
-  when: (groupName: keyof G | ReservedGroupNames, callback: () => void) => void;
+  when(groupName: keyof G | ReservedGroupNames, callback: () => void): void;
 };
 
 function difference<T>(

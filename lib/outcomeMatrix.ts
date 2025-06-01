@@ -8,8 +8,7 @@ type DimensionWithValue<D extends Dimension<unknown, unknown>> = D & {
 };
 
 export class OutcomeMatrix<
-  // biome-ignore lint/suspicious/noExplicitAny: inference works better with `any` for some reason
-  Dimensions extends Dimension<any, any>[],
+  Dimensions extends Dimension<unknown, unknown>[],
   Outcomes extends string,
 > {
   private outcomeRegistry: {
