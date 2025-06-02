@@ -1,5 +1,16 @@
+import type { SuiteAPI, SuiteCollector, TestAPI } from "vitest";
 import { TestOutcomeMatrix } from "./TestOutcomeMatrix";
 import { createDimension } from "./dimensions";
+import { describe as describeImport } from "./mockableVitest";
+
+vi.mock(import("./mockableVitest"), async (importActual) => {
+  const actual = await importActual();
+  return {
+    ...actual,
+    describe: vi.fn() as unknown as SuiteAPI,
+    it: vi.fn() as unknown as TestAPI,
+  };
+});
 
 const exampleDimensions = {
   string: createDimension({
@@ -89,4 +100,184 @@ it("errors when you defineOutcomes with a dimension that isn't specified", () =>
   ).toThrowError(
     `Dimension not found. Are you defining outcomes with a dimension that's not specified in "dimensions"?`,
   );
+});
+
+it("generates the test cases with every combination of parameters", () => {
+  const outcomeMatrix = new TestOutcomeMatrix({
+    dimensions: [exampleDimensions.string, exampleDimensions.number],
+    outcomes: ["outcome1", "outcome2"],
+    defaultOutcome: "outcome1",
+  });
+
+  outcomeMatrix.defineOutcomes((outcomes) => {
+    exampleDimensions.string.whenValue("a", () => {
+      exampleDimensions.number.whenValue(1, outcomes.outcome2);
+    });
+    exampleDimensions.string.whenValue("b", () => {
+      exampleDimensions.number.whenValue(2, outcomes.outcome2);
+    });
+  });
+
+  const nameFn = vi.fn();
+
+  vi.mocked(describeImport).mockImplementation((name, fn) => {
+    nameFn(name);
+    return (fn as unknown as () => SuiteCollector)();
+  });
+
+  const contextFn = vi.fn();
+  const outcomeFn = vi.fn();
+
+  outcomeMatrix.testOutcomes((applyDimensions, outcome) => {
+    const context = applyDimensions({ stringValue: "", numberValue: 0 });
+    contextFn(context);
+    outcomeFn(outcome);
+  });
+
+  const expectations = [
+    {
+      name: "a      | 2     ",
+      context: { stringValue: "a", numberValue: 2 },
+      outcome: "outcome1",
+    },
+    {
+      name: "a      | 3     ",
+      context: { stringValue: "a", numberValue: 3 },
+      outcome: "outcome1",
+    },
+    {
+      name: "b      | 1     ",
+      context: { stringValue: "b", numberValue: 1 },
+      outcome: "outcome1",
+    },
+    {
+      name: "b      | 3     ",
+      context: { stringValue: "b", numberValue: 3 },
+      outcome: "outcome1",
+    },
+    {
+      name: "c      | 1     ",
+      context: { stringValue: "c", numberValue: 1 },
+      outcome: "outcome1",
+    },
+    {
+      name: "c      | 2     ",
+      context: { stringValue: "c", numberValue: 2 },
+      outcome: "outcome1",
+    },
+    {
+      name: "c      | 3     ",
+      context: { stringValue: "c", numberValue: 3 },
+      outcome: "outcome1",
+    },
+    {
+      name: "a      | 1     ",
+      context: { stringValue: "a", numberValue: 1 },
+      outcome: "outcome2",
+    },
+    {
+      name: "b      | 2     ",
+      context: { stringValue: "b", numberValue: 2 },
+      outcome: "outcome2",
+    },
+  ];
+
+  expect(nameFn).toHaveBeenCalledTimes(expectations.length + 1);
+  expect(contextFn).toHaveBeenCalledTimes(expectations.length);
+  expect(outcomeFn).toHaveBeenCalledTimes(expectations.length);
+
+  expect(nameFn).toHaveBeenNthCalledWith(1, "String | Number");
+  for (const [index, expectation] of expectations.entries()) {
+    expect(nameFn).toHaveBeenNthCalledWith(index + 2, expectation.name);
+    expect(contextFn).toHaveBeenNthCalledWith(index + 1, expectation.context);
+    expect(outcomeFn).toHaveBeenNthCalledWith(index + 1, expectation.outcome);
+  }
+});
+
+it("generates good spacing with formatValue and values longer than the header", () => {
+  const longDimension = createDimension({
+    header: "Shorter",
+    values: ["aaa", "b"],
+    formatValue(value) {
+      return value.repeat(5);
+    },
+    apply(value, context: { stringValue: string }) {
+      context.stringValue = value;
+    },
+  });
+
+  const outcomeMatrix = new TestOutcomeMatrix({
+    dimensions: [longDimension, exampleDimensions.number],
+    outcomes: ["outcome1", "outcome2"],
+    defaultOutcome: "outcome1",
+  });
+
+  outcomeMatrix.defineOutcomes((outcomes) => {
+    longDimension.whenValue("aaa", () => {
+      exampleDimensions.number.whenValue(1, outcomes.outcome2);
+    });
+    longDimension.whenValue("b", () => {
+      exampleDimensions.number.whenValue(2, outcomes.outcome2);
+    });
+  });
+
+  const nameFn = vi.fn();
+
+  vi.mocked(describeImport).mockImplementation((name, fn) => {
+    nameFn(name);
+    return (fn as unknown as () => SuiteCollector)();
+  });
+
+  const contextFn = vi.fn();
+  const outcomeFn = vi.fn();
+
+  outcomeMatrix.testOutcomes((applyDimensions, outcome) => {
+    const context = applyDimensions({ stringValue: "", numberValue: 0 });
+    contextFn(context);
+    outcomeFn(outcome);
+  });
+
+  const expectations = [
+    {
+      name: "aaaaaaaaaaaaaaa | 2     ",
+      context: { stringValue: "aaa", numberValue: 2 },
+      outcome: "outcome1",
+    },
+    {
+      name: "aaaaaaaaaaaaaaa | 3     ",
+      context: { stringValue: "aaa", numberValue: 3 },
+      outcome: "outcome1",
+    },
+    {
+      name: "bbbbb           | 1     ",
+      context: { stringValue: "b", numberValue: 1 },
+      outcome: "outcome1",
+    },
+    {
+      name: "bbbbb           | 3     ",
+      context: { stringValue: "b", numberValue: 3 },
+      outcome: "outcome1",
+    },
+    {
+      name: "aaaaaaaaaaaaaaa | 1     ",
+      context: { stringValue: "aaa", numberValue: 1 },
+      outcome: "outcome2",
+    },
+    {
+      name: "bbbbb           | 2     ",
+      context: { stringValue: "b", numberValue: 2 },
+      outcome: "outcome2",
+    },
+  ];
+
+  expect(nameFn).toHaveBeenCalledTimes(expectations.length + 1);
+  expect(contextFn).toHaveBeenCalledTimes(expectations.length);
+  expect(outcomeFn).toHaveBeenCalledTimes(expectations.length);
+
+  expect(nameFn).toHaveBeenNthCalledWith(1, "Shorter         | Number");
+  for (const [index, expectation] of expectations.entries()) {
+    expect(nameFn).toHaveBeenNthCalledWith(index + 2, expectation.name);
+    expect(contextFn).toHaveBeenNthCalledWith(index + 1, expectation.context);
+    expect(outcomeFn).toHaveBeenNthCalledWith(index + 1, expectation.outcome);
+  }
 });

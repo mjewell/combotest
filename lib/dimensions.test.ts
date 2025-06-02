@@ -63,3 +63,78 @@ it("errors when you try to create groups with invalid values", () => {
     'Cannot create a group with value ["d"] because it is not defined in the dimension values ["a", "b", "c"]',
   );
 });
+
+it("can split the dimension into groups", () => {
+  const stringDimension = exampleDimensions.string.group({
+    group1: ["a", "b"],
+  });
+
+  const group1Callback = vi.fn();
+  stringDimension.when("group1", (val) => group1Callback(val));
+  expect(group1Callback).toHaveBeenCalledTimes(2);
+  expect(group1Callback).toHaveBeenNthCalledWith(1, "a");
+  expect(group1Callback).toHaveBeenNthCalledWith(2, "b");
+
+  const otherCallback = vi.fn();
+  stringDimension.when("other", (val) => otherCallback(val));
+  expect(otherCallback).toHaveBeenCalledTimes(1);
+  expect(otherCallback).toHaveBeenNthCalledWith(1, "c");
+
+  const allCallback = vi.fn();
+  stringDimension.when("all", (val) => allCallback(val));
+  expect(allCallback).toHaveBeenCalledTimes(3);
+  expect(allCallback).toHaveBeenNthCalledWith(1, "a");
+  expect(allCallback).toHaveBeenNthCalledWith(2, "b");
+  expect(allCallback).toHaveBeenNthCalledWith(3, "c");
+});
+
+it('errors when you call "when" with an invalid group', () => {
+  const stringDimension = exampleDimensions.string.group({
+    group1: ["a", "b"],
+  });
+
+  expect(() =>
+    stringDimension.when(
+      // @ts-expect-error
+      "blah",
+      () => {},
+    ),
+  ).toThrowError(
+    'Group "blah" does not exist. Available groups: "group1", "other", "all"',
+  );
+});
+
+it("can use whenValue and whenNotValue instead of groups", () => {
+  const aCallback = vi.fn();
+  exampleDimensions.string.whenValue("a", (val) => aCallback(val));
+  expect(aCallback).toHaveBeenCalledTimes(1);
+  expect(aCallback).toHaveBeenCalledWith("a");
+
+  const notACallback = vi.fn();
+  exampleDimensions.string.whenNotValue("a", (val) => notACallback(val));
+  expect(notACallback).toHaveBeenCalledTimes(2);
+  expect(notACallback).toHaveBeenNthCalledWith(1, "b");
+  expect(notACallback).toHaveBeenNthCalledWith(2, "c");
+});
+
+it('errors when you call "whenValue" or "whenNotValue" with an invalid value', () => {
+  expect(() =>
+    exampleDimensions.string.whenValue(
+      // @ts-expect-error
+      "blah",
+      () => {},
+    ),
+  ).toThrowError(
+    'Value "blah" is not defined in the dimension values ["a", "b", "c"]',
+  );
+
+  expect(() =>
+    exampleDimensions.string.whenNotValue(
+      // @ts-expect-error
+      "blah",
+      () => {},
+    ),
+  ).toThrowError(
+    'Value "blah" is not defined in the dimension values ["a", "b", "c"]',
+  );
+});

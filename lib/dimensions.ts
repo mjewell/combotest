@@ -54,11 +54,14 @@ export type Dimension<
   /** creates a `true` group for [true], and a `false` group for [false]. `other` will be empty. */
   bool(): Dimension<boolean, Context, { false: [false]; true: [true] }>;
   /** calls the callback with the value */
-  whenValue(value: T, callback: () => void): void;
+  whenValue(value: T, callback: (value: T) => void): void;
   /** calls the callback with all other values */
-  whenNotValue(value: T, callback: () => void): void;
+  whenNotValue(value: T, callback: (value: T) => void): void;
   /** calls the callback with each value in the group provided */
-  when(groupName: keyof G | ReservedGroupNames, callback: () => void): void;
+  when(
+    groupName: keyof G | ReservedGroupNames,
+    callback: (value: T) => void,
+  ): void;
 };
 
 function createGroupedDimension<T, Context, G extends GroupType<T>>(
@@ -139,17 +142,43 @@ function createGroupedDimension<T, Context, G extends GroupType<T>>(
       );
     },
     whenValue(value, callback) {
+      if (this.values.findIndex((v) => options.equalityFn(v, value)) === -1) {
+        throw new Error(
+          `Value ${JSON.stringify(value)} is not defined in the dimension values [${this.values
+            .map((v) => JSON.stringify(v))
+            .join(", ")}]`,
+        );
+      }
+
       addGlobalContext(def.apply, value);
-      callback();
+      callback(value);
       removeGlobalContext(def.apply);
     },
     whenNotValue(value, callback) {
+      if (this.values.findIndex((v) => options.equalityFn(v, value)) === -1) {
+        throw new Error(
+          `Value ${JSON.stringify(value)} is not defined in the dimension values [${this.values
+            .map((v) => JSON.stringify(v))
+            .join(", ")}]`,
+        );
+      }
+
       const values = subtractArrays(def.values, [value], options.equalityFn);
       for (const value of values) {
         this.whenValue(value, callback);
       }
     },
     when(groupName, callback) {
+      if (!(groupName in allGroups)) {
+        throw new Error(
+          `Group "${String(groupName)}" does not exist. Available groups: ${Object.keys(
+            allGroups,
+          )
+            .map((g) => `"${g}"`)
+            .join(", ")}`,
+        );
+      }
+
       const values = allGroups[groupName];
       for (const value of values) {
         this.whenValue(value, callback);

@@ -1,4 +1,5 @@
-import { describe, expect, it } from "vitest";
+import { expect } from "vitest";
+import { describe, it } from "./mockableVitest";
 import type { UnionToIntersection } from "./types";
 
 import { OutcomeMatrix } from "./OutcomeMatrix";
@@ -7,7 +8,7 @@ import { globalContext } from "./globalContext";
 
 type ApplyDimensionsCallback<D extends Dimension<unknown, unknown>> = (
   context: UnionToIntersection<Parameters<D["apply"]>[1]>,
-) => void;
+) => typeof context;
 
 export class TestOutcomeMatrix<
   Dimensions extends Dimension<unknown, unknown>[],
@@ -89,6 +90,7 @@ export class TestOutcomeMatrix<
           for (const dimension of dimensionValuesArray) {
             dimension.apply(dimension.value, context);
           }
+          return context;
         };
 
         callback(applyDimensions, outcome);
