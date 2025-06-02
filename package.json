@@ -1,6 +1,6 @@
 {
   "name": "combotest",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "",
   "type": "module",
   "files": ["dist"],
@@ -16,9 +16,10 @@
   "scripts": {
     "build": "vite build",
     "dev": "vite build --watch",
-    "lint": "biome check",
+    "lint": "biome check && tsc --noEmit",
     "lint:fix": "biome check --organize-imports-enabled=true --write",
-    "test": "vitest --typecheck"
+    "test": "vitest",
+    "prepublish": "pnpm lint && pnpm test -- --run && pnpm build"
   },
   "keywords": [],
   "author": "",
@@ -30,6 +31,7 @@
     "@biomejs/biome": "1.9.4",
     "@microsoft/api-extractor": "^7.52.8",
     "@types/node": "^22.15.29",
+    "typescript": "^5.8.3",
     "vite": "^6.3.5",
     "vite-plugin-dts": "^4.5.4"
   }

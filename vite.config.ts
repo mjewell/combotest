@@ -6,7 +6,7 @@ import { defineConfig } from "vitest/config";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig({
-  plugins: [dts()],
+  plugins: [dts({ exclude: "**/*.test.ts" })],
   test: {
     globals: true,
   },
