@@ -55,7 +55,11 @@ export class OutcomeMatrix<
   }
 
   // TODO: part of the constructor?
-  defineOutcomes(callback: typeof this.getOutcomeFn) {
+  defineOutcomes(
+    callback: (
+      dimensionValues: DimensionsValues<Dimensions>,
+    ) => Outcomes | undefined,
+  ) {
     this.getOutcomeFn = callback;
   }
 
