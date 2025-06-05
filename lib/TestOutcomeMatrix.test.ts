@@ -33,7 +33,7 @@ it("errors when there are no dimensions", () => {
   expect(
     () =>
       new TestOutcomeMatrix({
-        dimensions: [],
+        dimensions: {},
         outcomes: ["outcome1", "outcome2"],
         defaultOutcome: "outcome1",
       }),
@@ -44,7 +44,7 @@ it("errors when defaultOutcome is not one of the outcomes", () => {
   expect(
     () =>
       new TestOutcomeMatrix({
-        dimensions: [exampleDimensions.string],
+        dimensions: { string: exampleDimensions.string },
         outcomes: ["outcome1", "outcome2"],
         // @ts-expect-error
         defaultOutcome: "outcome3",
@@ -74,7 +74,7 @@ it("enforces that applyDimensions receives the correct context type", () => {
   });
 
   const outcomeMatrix = new TestOutcomeMatrix({
-    dimensions: [d1, d2],
+    dimensions: { d1, d2 },
     outcomes: ["outcome1", "outcome2"],
     defaultOutcome: "outcome1",
   });
@@ -86,36 +86,23 @@ it("enforces that applyDimensions receives the correct context type", () => {
   });
 });
 
-it("errors when you defineOutcomes with a dimension that isn't specified", () => {
-  const outcomeMatrix = new TestOutcomeMatrix({
-    dimensions: [exampleDimensions.string],
-    outcomes: ["outcome1", "outcome2"],
-    defaultOutcome: "outcome1",
-  });
-
-  expect(() =>
-    outcomeMatrix.defineOutcomes((outcomes) => {
-      exampleDimensions.number.when("all", outcomes.outcome1);
-    }),
-  ).toThrowError(
-    `Dimension not found. Are you defining outcomes with a dimension that's not specified in "dimensions"?`,
-  );
-});
-
 it("generates the test cases with every combination of parameters", () => {
   const outcomeMatrix = new TestOutcomeMatrix({
-    dimensions: [exampleDimensions.string, exampleDimensions.number],
+    dimensions: {
+      string: exampleDimensions.string,
+      number: exampleDimensions.number,
+    },
     outcomes: ["outcome1", "outcome2"],
     defaultOutcome: "outcome1",
   });
 
-  outcomeMatrix.defineOutcomes((outcomes) => {
-    exampleDimensions.string.whenValue("a", () => {
-      exampleDimensions.number.whenValue(1, outcomes.outcome2);
-    });
-    exampleDimensions.string.whenValue("b", () => {
-      exampleDimensions.number.whenValue(2, outcomes.outcome2);
-    });
+  outcomeMatrix.defineOutcomes(({ string, number }) => {
+    if (string === "a" && number === 1) {
+      return "outcome2";
+    }
+    if (string === "b" && number === 2) {
+      return "outcome2";
+    }
   });
 
   const nameFn = vi.fn();
@@ -207,18 +194,18 @@ it("generates good spacing with formatValue and values longer than the header", 
   });
 
   const outcomeMatrix = new TestOutcomeMatrix({
-    dimensions: [longDimension, exampleDimensions.number],
+    dimensions: { long: longDimension, number: exampleDimensions.number },
     outcomes: ["outcome1", "outcome2"],
     defaultOutcome: "outcome1",
   });
 
-  outcomeMatrix.defineOutcomes((outcomes) => {
-    longDimension.whenValue("aaa", () => {
-      exampleDimensions.number.whenValue(1, outcomes.outcome2);
-    });
-    longDimension.whenValue("b", () => {
-      exampleDimensions.number.whenValue(2, outcomes.outcome2);
-    });
+  outcomeMatrix.defineOutcomes(({ long, number }) => {
+    if (long === "aaa" && number === 1) {
+      return "outcome2";
+    }
+    if (long === "b" && number === 2) {
+      return "outcome2";
+    }
   });
 
   const nameFn = vi.fn();

@@ -1,25 +1,32 @@
-import { ImpossibleError } from "./ImpossibleError";
 import type { Dimension } from "./dimensions";
-import { subtractArrays } from "./utils";
 
 type DimensionValue<D extends Dimension<unknown, unknown>> =
   D["values"][number];
+
+type DimensionsValues<D extends Record<string, Dimension<unknown, unknown>>> = {
+  [K in keyof D]: DimensionValue<D[K]>;
+};
 
 type DimensionWithValue<D extends Dimension<unknown, unknown>> = D & {
   value: DimensionValue<D>;
 };
 
+type DimensionsWithValues<
+  D extends Record<string, Dimension<unknown, unknown>>,
+> = {
+  [K in keyof D]: DimensionWithValue<D[K]>;
+};
+
 export class OutcomeMatrix<
-  Dimensions extends Dimension<unknown, unknown>[],
+  Dimensions extends Record<string, Dimension<unknown, unknown>>,
   Outcomes extends string,
 > {
-  private outcomeRegistry: {
-    outcome: Outcomes;
-    dimensions: Map<() => void, DimensionValue<Dimensions[number]>>;
-  }[] = [];
   public dimensions: Dimensions;
   public outcomes: Outcomes[];
   private defaultOutcome: Outcomes;
+  private getOutcomeFn: (
+    dimensionValues: DimensionsValues<Dimensions>,
+  ) => Outcomes | undefined = () => undefined;
 
   constructor({
     dimensions,
@@ -34,7 +41,7 @@ export class OutcomeMatrix<
     this.outcomes = outcomes;
     this.defaultOutcome = defaultOutcome;
 
-    if (this.dimensions.length === 0) {
+    if (Object.keys(this.dimensions).length === 0) {
       throw new Error("No dimensions provided");
     }
 
@@ -47,103 +54,61 @@ export class OutcomeMatrix<
     }
   }
 
+  // TODO: part of the constructor?
+  defineOutcomes(callback: typeof this.getOutcomeFn) {
+    this.getOutcomeFn = callback;
+  }
+
+  private getOutcome(dimensionValues: DimensionsValues<Dimensions>) {
+    return this.getOutcomeFn(dimensionValues) ?? this.defaultOutcome;
+  }
+
   private forEachInternal(
     callback: (
-      dimensionValues: DimensionWithValue<Dimensions[number]>[],
+      dimensionsWithValues: DimensionsWithValues<Dimensions>,
       outcome: Outcomes,
     ) => void,
     filter: (outcome: Outcomes) => boolean = () => true,
-    dimensionValues: DimensionWithValue<Dimensions[number]>[] = [],
+    dimensionsWithValues: Partial<DimensionsWithValues<Dimensions>> = {},
   ) {
-    const def = this.dimensions[dimensionValues.length];
+    const nextDimension = Object.entries(this.dimensions)[
+      Object.keys(dimensionsWithValues).length
+    ];
 
-    if (!def) {
-      const outcome = this.getOutcome(dimensionValues);
+    if (!nextDimension) {
+      const allDimensionsWithValues =
+        dimensionsWithValues as DimensionsWithValues<Dimensions>;
+      const allDimensionsValues = Object.fromEntries(
+        Object.entries(allDimensionsWithValues).map(([k, v]) => [k, v.value]),
+      ) as DimensionsValues<Dimensions>;
+
+      const outcome = this.getOutcome(allDimensionsValues);
+
       if (filter(outcome)) {
-        callback(dimensionValues, outcome);
+        callback(allDimensionsWithValues, outcome);
       }
+
       return;
     }
 
+    const [key, def] = nextDimension;
+
     for (const value of def.values) {
-      const newDimensionValues = [...dimensionValues, { ...def, value }];
-      this.forEachInternal(callback, filter, newDimensionValues);
+      const newDimensionsWithValues = {
+        ...dimensionsWithValues,
+        [key]: { ...def, value },
+      };
+      this.forEachInternal(callback, filter, newDimensionsWithValues);
     }
   }
 
   forEach(
     callback: (
-      dimensionValues: DimensionWithValue<Dimensions[number]>[],
+      dimensionsWithValues: DimensionsWithValues<Dimensions>,
       outcome: Outcomes,
     ) => void,
     filter: (outcome: Outcomes) => boolean = () => true,
   ) {
     this.forEachInternal(callback, filter);
-  }
-
-  markOutcome(
-    dimensions: Map<() => void, DimensionValue<Dimensions[number]>>,
-    outcome: Outcomes,
-  ) {
-    if (!this.outcomes.includes(outcome)) {
-      throw new Error(
-        `Outcome "${outcome}" is not defined in the outcomes list: ${this.outcomes.join(
-          ", ",
-        )}`,
-      );
-    }
-
-    dimensions.forEach((_, key) => {
-      if (!this.dimensions.find((d) => d.apply === key)) {
-        throw new Error(
-          `Dimension not found. Are you defining outcomes with a dimension that's not specified in "dimensions"?`,
-        );
-      }
-    });
-
-    this.outcomeRegistry.push({ outcome, dimensions: new Map(dimensions) });
-  }
-
-  getOutcome(
-    dimensionValues: DimensionWithValue<Dimensions[number]>[],
-  ): Outcomes {
-    const dimensionsKeys = this.dimensions.map((d) => d.apply);
-    const dimensionValuesKeys = dimensionValues.map((dv) => dv.apply);
-
-    if (subtractArrays(dimensionsKeys, dimensionValuesKeys).length > 0) {
-      throw new Error("Some dimension values were not provided");
-    }
-
-    if (subtractArrays(dimensionValuesKeys, dimensionsKeys).length > 0) {
-      throw new Error("Some unexpected dimension values were provided");
-    }
-
-    const matchingEntries = this.outcomeRegistry.filter((entry) =>
-      Array.from(entry.dimensions.entries()).every(([key, value]) => {
-        const dimensionValue = dimensionValues.find((dv) => dv.apply === key);
-
-        if (!dimensionValue) {
-          throw new ImpossibleError("Dimension not found");
-        }
-
-        return value === dimensionValue.value;
-      }),
-    );
-
-    if (matchingEntries.length === 0) {
-      return this.defaultOutcome;
-    }
-
-    const uniqueOutcomes = new Set(matchingEntries.map((o) => o.outcome));
-
-    if (uniqueOutcomes.size > 1) {
-      throw new Error(
-        `Multiple outcomes found for ${dimensionValues
-          .map((v) => v.value)
-          .join(", ")}: ${Array.from(uniqueOutcomes).join(", ")}`,
-      );
-    }
-
-    return matchingEntries[0].outcome;
   }
 }

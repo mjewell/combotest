@@ -4,14 +4,15 @@ import type { UnionToIntersection } from "./types";
 
 import { OutcomeMatrix } from "./OutcomeMatrix";
 import type { Dimension } from "./dimensions";
-import { globalContext } from "./globalContext";
 
-type ApplyDimensionsCallback<D extends Dimension<unknown, unknown>> = (
-  context: UnionToIntersection<Parameters<D["apply"]>[1]>,
+type ApplyDimensionsCallback<
+  D extends Record<string, Dimension<unknown, unknown>>,
+> = (
+  context: UnionToIntersection<Parameters<D[keyof D]["apply"]>[1]>,
 ) => typeof context;
 
 export class TestOutcomeMatrix<
-  Dimensions extends Dimension<unknown, unknown>[],
+  Dimensions extends Record<string, Dimension<unknown, unknown>>,
   Outcomes extends string,
 > extends OutcomeMatrix<Dimensions, Outcomes> {
   columnWidths: number[];
@@ -30,30 +31,12 @@ export class TestOutcomeMatrix<
       outcomes,
       defaultOutcome,
     });
-    this.columnWidths = this.dimensions.map((d) =>
+    this.columnWidths = Object.values(this.dimensions).map((d) =>
       Math.max(
         d.header.length,
         ...d.values.map((v) => d.formatValue(v).length),
       ),
     );
-  }
-
-  defineOutcomes(
-    callback: (
-      outcomes: { [K in Outcomes]: () => void },
-      dimensions: Dimensions,
-    ) => void,
-  ) {
-    globalContext.clear();
-
-    const outcomeLookup = Object.fromEntries(
-      this.outcomes.map((outcome) => [
-        outcome,
-        () => this.markOutcome(globalContext, outcome),
-      ]),
-    ) as { [K in Outcomes]: () => void };
-
-    callback(outcomeLookup, this.dimensions);
   }
 
   private stringifyRow(row: string[]) {
@@ -63,28 +46,34 @@ export class TestOutcomeMatrix<
   }
 
   private printHeaders() {
-    describe(this.stringifyRow(this.dimensions.map((d) => d.header)), () => {
+    const description = this.stringifyRow(
+      Object.values(this.dimensions).map((d) => d.header),
+    );
+
+    describe(description, () => {
+      // just some dummy expectation to make the header look right
       it("Outcome", () => expect(true).toBe(true));
     });
   }
 
   private testOutcomesInternal(
     callback: (
-      applyDimensions: ApplyDimensionsCallback<Dimensions[number]>,
+      applyDimensions: ApplyDimensionsCallback<Dimensions>,
       outcome: Outcomes,
     ) => void,
     filter: (outcome: Outcomes) => boolean = () => true,
   ) {
     this.forEach((dimensionValues, outcome) => {
       const dimensionValuesArray = Object.values(dimensionValues);
-      describe(this.stringifyRow(
+      const description = this.stringifyRow(
         dimensionValuesArray.map((d) => d.formatValue(d.value)),
-      ), () => {
+      );
+      describe(description, () => {
         for (const dimension of dimensionValuesArray) {
           dimension.applyInDescribe?.(dimension.value);
         }
 
-        const applyDimensions: ApplyDimensionsCallback<Dimensions[number]> = (
+        const applyDimensions: ApplyDimensionsCallback<Dimensions> = (
           context,
         ) => {
           for (const dimension of dimensionValuesArray) {
@@ -100,7 +89,7 @@ export class TestOutcomeMatrix<
 
   testOutcomes(
     callback: (
-      applyDimensions: ApplyDimensionsCallback<Dimensions[number]>,
+      applyDimensions: ApplyDimensionsCallback<Dimensions>,
       outcome: Outcomes,
     ) => void,
     opts: { order?: "dimensions" | "outcomes" } = {},
