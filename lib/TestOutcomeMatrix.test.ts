@@ -73,8 +73,14 @@ it("enforces that applyDimensions receives the correct context type", () => {
     },
   });
 
+  // no `apply`, so no way to infer context
+  const d3 = createDimension({
+    header: "Number",
+    values: [1, 2, 3],
+  });
+
   const outcomeMatrix = new TestOutcomeMatrix({
-    dimensions: { d1, d2 },
+    dimensions: { d1, d2, d3 },
     outcomes: ["outcome1", "outcome2"],
     defaultOutcome: "outcome1",
   });

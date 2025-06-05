@@ -28,7 +28,9 @@ export type Dimension<T, Context> = Required<
   "formatValue" | "applyInDescribe" | "apply"
 >;
 
-export function createDimension<T, Context>(def: DimensionDef<T, Context>) {
+export function createDimension<T, Context = never>(
+  def: DimensionDef<T, Context>,
+) {
   if (def.values.length === 0) {
     throw new Error("Dimensions must have at least one value defined");
   }
