@@ -7,13 +7,13 @@ import type { Dimension } from "./dimensions";
 import { mapValues } from "./utils";
 
 type ApplyDimensionsCallback<
-  D extends Record<string, Dimension<unknown, unknown>>,
+  D extends Record<string, Dimension<unknown, never>>,
 > = (
   context: UnionToIntersection<Parameters<D[keyof D]["apply"]>[1]>,
 ) => typeof context;
 
 export class TestOutcomeMatrix<
-  Dimensions extends Record<string, Dimension<unknown, unknown>>,
+  Dimensions extends Record<string, Dimension<unknown, never>>,
   Outcomes extends string,
 > extends OutcomeMatrix<Dimensions, Outcomes> {
   columnWidths: number[];

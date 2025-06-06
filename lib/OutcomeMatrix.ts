@@ -1,22 +1,22 @@
 import type { Dimension } from "./dimensions";
 import { mapValues } from "./utils";
 
-type Value<D extends Dimension<unknown, unknown>> = D["values"][number];
+type Value<D extends Dimension<unknown, never>> = D["values"][number];
 
-export type Values<D extends Record<string, Dimension<unknown, unknown>>> = {
+export type Values<D extends Record<string, Dimension<unknown, never>>> = {
   [K in keyof D]: Value<D[K]>;
 };
 
-type DimensionValue<D extends Dimension<unknown, unknown>> = D & {
+type DimensionValue<D extends Dimension<unknown, never>> = D & {
   value: Value<D>;
 };
 
-type DimensionValues<D extends Record<string, Dimension<unknown, unknown>>> = {
+type DimensionValues<D extends Record<string, Dimension<unknown, never>>> = {
   [K in keyof D]: DimensionValue<D[K]>;
 };
 
 export class OutcomeMatrix<
-  Dimensions extends Record<string, Dimension<unknown, unknown>>,
+  Dimensions extends Record<string, Dimension<unknown, never>>,
   Outcomes extends string,
 > {
   public dimensions: Dimensions;

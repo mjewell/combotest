@@ -92,6 +92,40 @@ it("enforces that applyDimensions receives the correct context type", () => {
   });
 });
 
+it("infers a context of never for a single dimension without context", () => {
+  const outcomeMatrix = new TestOutcomeMatrix({
+    dimensions: {
+      d: createDimension({
+        header: "Dimension",
+        values: [false, true] as const,
+      }),
+    },
+    outcomes: ["outcome1", "outcome2"],
+    defaultOutcome: "outcome1",
+  });
+
+  outcomeMatrix.testOutcomes((applyDimensions) => {
+    expectTypeOf(applyDimensions).parameter(0).branded.toEqualTypeOf<never>();
+  });
+});
+
+it("infers a context of never for a single dimension without context defined outside the outcome matrix", () => {
+  const d = createDimension({
+    header: "Dimension",
+    values: [false, true] as const,
+  });
+
+  const outcomeMatrix = new TestOutcomeMatrix({
+    dimensions: { d },
+    outcomes: ["outcome1", "outcome2"],
+    defaultOutcome: "outcome1",
+  });
+
+  outcomeMatrix.testOutcomes((applyDimensions) => {
+    expectTypeOf(applyDimensions).parameter(0).branded.toEqualTypeOf<never>();
+  });
+});
+
 it("generates the test cases with every combination of parameters", () => {
   const outcomeMatrix = new TestOutcomeMatrix({
     dimensions: {
