@@ -2,8 +2,9 @@ import { expect } from "vitest";
 import { describe, it } from "./mockableVitest";
 import type { UnionToIntersection } from "./types";
 
-import { OutcomeMatrix } from "./OutcomeMatrix";
+import { OutcomeMatrix, type Values } from "./OutcomeMatrix";
 import type { Dimension } from "./dimensions";
+import { mapValues } from "./utils";
 
 type ApplyDimensionsCallback<
   D extends Record<string, Dimension<unknown, unknown>>,
@@ -61,30 +62,37 @@ export class TestOutcomeMatrix<
       applyDimensions: ApplyDimensionsCallback<Dimensions>,
       outcome: Outcomes,
     ) => void,
-    filter: (outcome: Outcomes) => boolean = () => true,
+    filter: (values: Values<Dimensions>, outcome: Outcomes) => boolean = () =>
+      true,
   ) {
     this.forEach((dimensionValues, outcome) => {
+      const values = mapValues(dimensionValues, (v) => v.value);
+
+      if (!filter(values, outcome)) {
+        return;
+      }
+
       const dimensionValuesArray = Object.values(dimensionValues);
       const description = this.stringifyRow(
         dimensionValuesArray.map((d) => d.formatValue(d.value)),
       );
       describe(description, () => {
-        for (const dimension of dimensionValuesArray) {
-          dimension.applyInDescribe?.(dimension.value);
+        for (const dimensionValue of dimensionValuesArray) {
+          dimensionValue.applyInDescribe?.(dimensionValue.value);
         }
 
         const applyDimensions: ApplyDimensionsCallback<Dimensions> = (
           context,
         ) => {
-          for (const dimension of dimensionValuesArray) {
-            dimension.apply(dimension.value, context);
+          for (const dimensionValue of dimensionValuesArray) {
+            dimensionValue.apply(dimensionValue.value, context);
           }
           return context;
         };
 
         callback(applyDimensions, outcome);
       });
-    }, filter);
+    });
   }
 
   testOutcomes(
@@ -92,18 +100,22 @@ export class TestOutcomeMatrix<
       applyDimensions: ApplyDimensionsCallback<Dimensions>,
       outcome: Outcomes,
     ) => void,
-    opts: { order?: "dimensions" | "outcomes" } = {},
+    opts: {
+      order?: "dimensions" | "outcomes";
+      only?: (values: Values<Dimensions>, outcome: Outcomes) => boolean;
+    } = {},
   ) {
-    const options = { order: "outcomes", ...opts };
+    const options = { order: "outcomes", only: () => true, ...opts };
 
     this.printHeaders();
     if (options.order === "dimensions") {
-      this.testOutcomesInternal(callback);
+      this.testOutcomesInternal(callback, options.only);
     } else {
       for (const targetOutcome of this.outcomes) {
         this.testOutcomesInternal(
           callback,
-          (outcome) => outcome === targetOutcome,
+          (values, outcome) =>
+            options.only(values, outcome) && outcome === targetOutcome,
         );
       }
     }

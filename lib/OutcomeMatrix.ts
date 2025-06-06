@@ -1,20 +1,18 @@
 import type { Dimension } from "./dimensions";
+import { mapValues } from "./utils";
 
-type DimensionValue<D extends Dimension<unknown, unknown>> =
-  D["values"][number];
+type Value<D extends Dimension<unknown, unknown>> = D["values"][number];
 
-type DimensionsValues<D extends Record<string, Dimension<unknown, unknown>>> = {
+export type Values<D extends Record<string, Dimension<unknown, unknown>>> = {
+  [K in keyof D]: Value<D[K]>;
+};
+
+type DimensionValue<D extends Dimension<unknown, unknown>> = D & {
+  value: Value<D>;
+};
+
+type DimensionValues<D extends Record<string, Dimension<unknown, unknown>>> = {
   [K in keyof D]: DimensionValue<D[K]>;
-};
-
-type DimensionWithValue<D extends Dimension<unknown, unknown>> = D & {
-  value: DimensionValue<D>;
-};
-
-type DimensionsWithValues<
-  D extends Record<string, Dimension<unknown, unknown>>,
-> = {
-  [K in keyof D]: DimensionWithValue<D[K]>;
 };
 
 export class OutcomeMatrix<
@@ -24,9 +22,8 @@ export class OutcomeMatrix<
   public dimensions: Dimensions;
   public outcomes: Outcomes[];
   private defaultOutcome: Outcomes;
-  private getOutcomeFn: (
-    dimensionValues: DimensionsValues<Dimensions>,
-  ) => Outcomes | undefined = () => undefined;
+  private getOutcomeFn: (values: Values<Dimensions>) => Outcomes | undefined =
+    () => undefined;
 
   constructor({
     dimensions,
@@ -56,41 +53,33 @@ export class OutcomeMatrix<
 
   // TODO: part of the constructor?
   defineOutcomes(
-    callback: (
-      dimensionValues: DimensionsValues<Dimensions>,
-    ) => Outcomes | undefined,
+    callback: (values: Values<Dimensions>) => Outcomes | undefined,
   ) {
     this.getOutcomeFn = callback;
   }
 
-  private getOutcome(dimensionValues: DimensionsValues<Dimensions>) {
-    return this.getOutcomeFn(dimensionValues) ?? this.defaultOutcome;
+  private getOutcome(values: Values<Dimensions>) {
+    return this.getOutcomeFn(values) ?? this.defaultOutcome;
   }
 
   private forEachInternal(
     callback: (
-      dimensionsWithValues: DimensionsWithValues<Dimensions>,
+      dimensionValues: DimensionValues<Dimensions>,
       outcome: Outcomes,
     ) => void,
-    filter: (outcome: Outcomes) => boolean = () => true,
-    dimensionsWithValues: Partial<DimensionsWithValues<Dimensions>> = {},
+    dimensionValues: Partial<DimensionValues<Dimensions>> = {},
   ) {
     const nextDimension = Object.entries(this.dimensions)[
-      Object.keys(dimensionsWithValues).length
+      Object.keys(dimensionValues).length
     ];
 
     if (!nextDimension) {
-      const allDimensionsWithValues =
-        dimensionsWithValues as DimensionsWithValues<Dimensions>;
-      const allDimensionsValues = Object.fromEntries(
-        Object.entries(allDimensionsWithValues).map(([k, v]) => [k, v.value]),
-      ) as DimensionsValues<Dimensions>;
+      const allDimensionValues = dimensionValues as DimensionValues<Dimensions>;
+      const values = mapValues(allDimensionValues, (v) => v.value);
 
-      const outcome = this.getOutcome(allDimensionsValues);
+      const outcome = this.getOutcome(values);
 
-      if (filter(outcome)) {
-        callback(allDimensionsWithValues, outcome);
-      }
+      callback(allDimensionValues, outcome);
 
       return;
     }
@@ -98,21 +87,20 @@ export class OutcomeMatrix<
     const [key, def] = nextDimension;
 
     for (const value of def.values) {
-      const newDimensionsWithValues = {
-        ...dimensionsWithValues,
+      const newDimensionValues = {
+        ...dimensionValues,
         [key]: { ...def, value },
       };
-      this.forEachInternal(callback, filter, newDimensionsWithValues);
+      this.forEachInternal(callback, newDimensionValues);
     }
   }
 
   forEach(
     callback: (
-      dimensionsWithValues: DimensionsWithValues<Dimensions>,
+      dimensionValues: DimensionValues<Dimensions>,
       outcome: Outcomes,
     ) => void,
-    filter: (outcome: Outcomes) => boolean = () => true,
   ) {
-    this.forEachInternal(callback, filter);
+    this.forEachInternal(callback);
   }
 }

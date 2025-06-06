@@ -187,6 +187,84 @@ it("generates the test cases with every combination of parameters", () => {
   }
 });
 
+it("can limit what test cases are generated using `only`", () => {
+  const outcomeMatrix = new TestOutcomeMatrix({
+    dimensions: {
+      string: exampleDimensions.string,
+      number: exampleDimensions.number,
+    },
+    outcomes: ["outcome1", "outcome2"],
+    defaultOutcome: "outcome1",
+  });
+
+  outcomeMatrix.defineOutcomes(({ string, number }) => {
+    if (string === "a" && number === 1) {
+      return "outcome2";
+    }
+    if (string === "b" && number === 2) {
+      return "outcome2";
+    }
+  });
+
+  const nameFn = vi.fn();
+
+  vi.mocked(describeImport).mockImplementation((name, fn) => {
+    nameFn(name);
+    return (fn as unknown as () => SuiteCollector)();
+  });
+
+  const contextFn = vi.fn();
+  const outcomeFn = vi.fn();
+
+  outcomeMatrix.testOutcomes(
+    (applyDimensions, outcome) => {
+      const context = applyDimensions({ stringValue: "", numberValue: 0 });
+      contextFn(context);
+      outcomeFn(outcome);
+    },
+    { only: (values) => values.string === "a" || values.number === 2 },
+  );
+
+  const expectations = [
+    {
+      name: "a      | 2     ",
+      context: { stringValue: "a", numberValue: 2 },
+      outcome: "outcome1",
+    },
+    {
+      name: "a      | 3     ",
+      context: { stringValue: "a", numberValue: 3 },
+      outcome: "outcome1",
+    },
+    {
+      name: "c      | 2     ",
+      context: { stringValue: "c", numberValue: 2 },
+      outcome: "outcome1",
+    },
+    {
+      name: "a      | 1     ",
+      context: { stringValue: "a", numberValue: 1 },
+      outcome: "outcome2",
+    },
+    {
+      name: "b      | 2     ",
+      context: { stringValue: "b", numberValue: 2 },
+      outcome: "outcome2",
+    },
+  ];
+
+  expect(nameFn).toHaveBeenCalledTimes(expectations.length + 1);
+  expect(contextFn).toHaveBeenCalledTimes(expectations.length);
+  expect(outcomeFn).toHaveBeenCalledTimes(expectations.length);
+
+  expect(nameFn).toHaveBeenNthCalledWith(1, "String | Number");
+  for (const [index, expectation] of expectations.entries()) {
+    expect(nameFn).toHaveBeenNthCalledWith(index + 2, expectation.name);
+    expect(contextFn).toHaveBeenNthCalledWith(index + 1, expectation.context);
+    expect(outcomeFn).toHaveBeenNthCalledWith(index + 1, expectation.outcome);
+  }
+});
+
 it("generates good spacing with formatValue and values longer than the header", () => {
   const longDimension = createDimension({
     header: "Shorter",
