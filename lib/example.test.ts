@@ -13,7 +13,7 @@ function isAllowed({ user, feature }: { user: User; feature: boolean }) {
 // define your inputs as `dimensions`
 const role = createDimension({
   header: "Role",
-  values: ["admin", "user", "readonly"] as const,
+  values: ["admin", "user", "readonly"],
   apply: (value, context: { user: User }) => {
     context.user.role = value;
   },
@@ -21,7 +21,7 @@ const role = createDimension({
 
 const feature = createDimension({
   header: "Feature Enabled",
-  values: [false, true] as const,
+  values: [false, true],
   apply: (value, context: { feature: boolean }) => {
     context.feature = value;
   },
@@ -30,7 +30,7 @@ const feature = createDimension({
 // create the matrix of possible outcomes
 const outcomeMatrix = new TestOutcomeMatrix({
   dimensions: { role, feature },
-  outcomes: ["allowed", "notAllowed"] as const,
+  outcomes: ["allowed", "notAllowed"],
   defaultOutcome: "notAllowed",
 });
 
@@ -60,9 +60,9 @@ outcomeMatrix.testOutcomes((applyDimensions, outcome) => {
   }[outcome];
 
   it(message, () => {
-    // you can do shared setup here
+    // you can put shared test setup here
 
-    // then your outcome-specific assertion
+    // then call your outcome-specific assertion
     assertion();
   });
 });

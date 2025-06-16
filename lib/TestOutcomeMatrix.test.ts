@@ -15,14 +15,14 @@ vi.mock(import("./mockableVitest"), async (importActual) => {
 const exampleDimensions = {
   string: createDimension({
     header: "String",
-    values: ["a", "b", "c"] as const,
+    values: ["a", "b", "c"],
     apply(value, context: { stringValue: string }) {
       context.stringValue = value;
     },
   }),
   number: createDimension({
     header: "Number",
-    values: [1, 2, 3] as const,
+    values: [1, 2, 3],
     apply(value, context: { numberValue: number }) {
       context.numberValue = value;
     },
@@ -52,6 +52,38 @@ it("errors when defaultOutcome is not one of the outcomes", () => {
   ).toThrowError(
     'Default outcome "outcome3" is not defined in the outcomes list',
   );
+});
+
+it("errors when you define an invalid outcome", () => {
+  const outcomeMatrix = new TestOutcomeMatrix({
+    dimensions: { string: exampleDimensions.string },
+    outcomes: ["outcome1", "outcome2"],
+    defaultOutcome: "outcome1",
+  });
+
+  // @ts-expect-error
+  outcomeMatrix.defineOutcomes(() => "outcome3");
+
+  expect(() => outcomeMatrix.testOutcomes(() => {})).toThrowError(
+    'Outcome "outcome3" is not defined in the outcomes list: outcome1, outcome2',
+  );
+});
+
+it("correctly infers the type of a dimension as a const", () => {
+  const outcomeMatrix = new TestOutcomeMatrix({
+    dimensions: { string: exampleDimensions.string },
+    outcomes: ["outcome1", "outcome2"],
+    defaultOutcome: "outcome1",
+  });
+
+  outcomeMatrix.defineOutcomes(({ string }) => {
+    // @ts-expect-error
+    if (string === "d") {
+      return "outcome1";
+    }
+
+    return "outcome2";
+  });
 });
 
 it("enforces that applyDimensions receives the correct context type", () => {
@@ -97,7 +129,7 @@ it("infers a context of never for a single dimension without context", () => {
     dimensions: {
       d: createDimension({
         header: "Dimension",
-        values: [false, true] as const,
+        values: [false, true],
       }),
     },
     outcomes: ["outcome1", "outcome2"],
@@ -112,7 +144,7 @@ it("infers a context of never for a single dimension without context", () => {
 it("infers a context of never for a single dimension without context defined outside the outcome matrix", () => {
   const d = createDimension({
     header: "Dimension",
-    values: [false, true] as const,
+    values: [false, true],
   });
 
   const outcomeMatrix = new TestOutcomeMatrix({

@@ -79,6 +79,12 @@ export class OutcomeMatrix<
 
       const outcome = this.getOutcome(values);
 
+      if (!this.outcomes.includes(outcome)) {
+        throw new Error(
+          `Outcome "${outcome}" is not defined in the outcomes list: ${this.outcomes.join(", ")}`,
+        );
+      }
+
       callback(allDimensionValues, outcome);
 
       return;

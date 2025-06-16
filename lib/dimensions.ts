@@ -28,7 +28,7 @@ export type Dimension<T, Context> = Required<DimensionDef<T, Context>>;
 export type DimensionContext<D extends Dimension<unknown, never>> =
   D extends Dimension<unknown, infer C> ? C : never;
 
-export function createDimension<T, Context = never>(
+export function createDimension<const T, Context = never>(
   def: DimensionDef<T, Context>,
 ) {
   if (def.values.length === 0) {
