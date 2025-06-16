@@ -10,6 +10,7 @@ function isAllowed({ user, feature }: { user: User; feature: boolean }) {
   return user.role === "admin" || feature;
 }
 
+// define your inputs as `dimensions`
 const role = createDimension({
   header: "Role",
   values: ["admin", "user", "readonly"] as const,
@@ -46,13 +47,22 @@ outcomeMatrix.testOutcomes((applyDimensions, outcome) => {
   // provide some defaults to satisfy typescript, these attributes will be overwritten
   const context = applyDimensions({ user: { role: "admin" }, feature: false });
 
-  if (outcome === "allowed") {
-    it("is allowed", () => {
-      expect(isAllowed(context)).toBe(true);
-    });
-  } else {
-    it("is not allowed", () => {
-      expect(isAllowed(context)).toBe(false);
-    });
-  }
+  // you can do whatever you want here, but this is a nice pattern for defining your tests
+  const { message, assertion } = {
+    allowed: {
+      message: "is allowed",
+      assertion: () => expect(isAllowed(context)).toBe(true),
+    },
+    notAllowed: {
+      message: "is not allowed",
+      assertion: () => expect(isAllowed(context)).toBe(false),
+    },
+  }[outcome];
+
+  it(message, () => {
+    // you can do shared setup here
+
+    // then your outcome-specific assertion
+    assertion();
+  });
 });

@@ -3,13 +3,13 @@ import { describe, it } from "./mockableVitest";
 import type { UnionToIntersection } from "./types";
 
 import { OutcomeMatrix, type Values } from "./OutcomeMatrix";
-import type { Dimension } from "./dimensions";
+import type { Dimension, DimensionContext } from "./dimensions";
 import { mapValues } from "./utils";
 
 type ApplyDimensionsCallback<
   D extends Record<string, Dimension<unknown, never>>,
 > = (
-  context: UnionToIntersection<Parameters<D[keyof D]["apply"]>[1]>,
+  context: UnionToIntersection<DimensionContext<D[keyof D]>>,
 ) => typeof context;
 
 export class TestOutcomeMatrix<
@@ -95,7 +95,7 @@ export class TestOutcomeMatrix<
     });
   }
 
-  testOutcomes(
+  public testOutcomes(
     callback: (
       applyDimensions: ApplyDimensionsCallback<Dimensions>,
       outcome: Outcomes,

@@ -52,7 +52,7 @@ export class OutcomeMatrix<
   }
 
   // TODO: part of the constructor?
-  defineOutcomes(
+  public defineOutcomes(
     callback: (values: Values<Dimensions>) => Outcomes | undefined,
   ) {
     this.getOutcomeFn = callback;
@@ -95,7 +95,7 @@ export class OutcomeMatrix<
     }
   }
 
-  forEach(
+  public forEach(
     callback: (
       dimensionValues: DimensionValues<Dimensions>,
       outcome: Outcomes,
