@@ -1,3 +1,5 @@
+import { mergeDefaults } from "./mergeDefaults";
+
 export type DimensionDef<T, Context> = {
   /** a human-readable header that will show at the top of the table in the test logs */
   header: string;
@@ -33,10 +35,12 @@ export function createDimension<T, Context = never>(
     throw new Error("Dimensions must have at least one value defined");
   }
 
-  return {
-    formatValue: (value) => String(value),
-    applyInDescribe: () => {},
-    apply: () => {},
-    ...def,
-  } satisfies Dimension<T, Context>;
+  return mergeDefaults(
+    {
+      formatValue: (value) => String(value),
+      applyInDescribe: () => {},
+      apply: () => {},
+    },
+    def,
+  );
 }

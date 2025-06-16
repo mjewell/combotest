@@ -4,6 +4,7 @@ import type { UnionToIntersection } from "./types";
 
 import { OutcomeMatrix, type Values } from "./OutcomeMatrix";
 import type { Dimension, DimensionContext } from "./dimensions";
+import { mergeDefaults } from "./mergeDefaults";
 import { mapValues } from "./utils";
 
 type ApplyDimensionsCallback<
@@ -105,7 +106,10 @@ export class TestOutcomeMatrix<
       only?: (values: Values<Dimensions>, outcome: Outcomes) => boolean;
     } = {},
   ) {
-    const options = { order: "outcomes", only: () => true, ...opts };
+    const options = mergeDefaults(
+      { order: "outcomes", only: () => true },
+      opts,
+    );
 
     this.printHeaders();
     if (options.order === "dimensions") {
