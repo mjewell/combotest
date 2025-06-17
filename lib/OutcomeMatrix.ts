@@ -1,9 +1,10 @@
 import type { Dimension } from "./dimensions";
+import { type WithDefaults, mergeDefaults } from "./mergeDefaults";
 import { mapValues } from "./utils";
 
 type Value<D extends Dimension<unknown, never>> = D["values"][number];
 
-export type Values<D extends Record<string, Dimension<unknown, never>>> = {
+type Values<D extends Record<string, Dimension<unknown, never>>> = {
   [K in keyof D]: Value<D[K]>;
 };
 
@@ -14,6 +15,19 @@ type DimensionValue<D extends Dimension<unknown, never>> = D & {
 type DimensionValues<D extends Record<string, Dimension<unknown, never>>> = {
   [K in keyof D]: DimensionValue<D[K]>;
 };
+
+export type Options<
+  Dimensions extends Record<string, Dimension<unknown, never>>,
+  Outcomes extends string,
+> = {
+  order?: "dimensions" | "outcomes";
+  only?: (values: Values<Dimensions>, outcome: Outcomes) => boolean;
+};
+
+type ResolvedOptions<
+  Dimensions extends Record<string, Dimension<unknown, never>>,
+  Outcomes extends string,
+> = WithDefaults<Options<Dimensions, Outcomes>, "order" | "only">;
 
 export class OutcomeMatrix<
   Dimensions extends Record<string, Dimension<unknown, never>>,
@@ -67,6 +81,7 @@ export class OutcomeMatrix<
       dimensionValues: DimensionValues<Dimensions>,
       outcome: Outcomes,
     ) => void,
+    options: ResolvedOptions<Dimensions, Outcomes>,
     dimensionValues: Partial<DimensionValues<Dimensions>> = {},
   ) {
     const nextDimension = Object.entries(this.dimensions)[
@@ -85,6 +100,10 @@ export class OutcomeMatrix<
         );
       }
 
+      if (!options.only(values, outcome)) {
+        return;
+      }
+
       callback(allDimensionValues, outcome);
 
       return;
@@ -97,7 +116,7 @@ export class OutcomeMatrix<
         ...dimensionValues,
         [key]: { ...def, value },
       };
-      this.forEachInternal(callback, newDimensionValues);
+      this.forEachInternal(callback, options, newDimensionValues);
     }
   }
 
@@ -106,7 +125,23 @@ export class OutcomeMatrix<
       dimensionValues: DimensionValues<Dimensions>,
       outcome: Outcomes,
     ) => void,
+    opts: Options<Dimensions, Outcomes> = {},
   ) {
-    this.forEachInternal(callback);
+    const options = mergeDefaults(
+      { order: "outcomes", only: () => true },
+      opts,
+    );
+
+    if (options.order === "dimensions") {
+      this.forEachInternal(callback, options);
+    } else {
+      for (const targetOutcome of this.outcomes) {
+        this.forEachInternal(callback, {
+          ...options,
+          only: (values, outcome) =>
+            options.only(values, outcome) && outcome === targetOutcome,
+        });
+      }
+    }
   }
 }

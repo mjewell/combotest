@@ -288,7 +288,10 @@ it("can limit what test cases are generated using `only`", () => {
       contextFn(context);
       outcomeFn(outcome);
     },
-    { only: (values) => values.string === "a" || values.number === 2 },
+    {
+      only: (values, outcome) =>
+        values.string === "a" || outcome === "outcome2",
+    },
   );
 
   const expectations = [
@@ -300,11 +303,6 @@ it("can limit what test cases are generated using `only`", () => {
     {
       name: "a      | 3     ",
       context: { stringValue: "a", numberValue: 3 },
-      outcome: "outcome1",
-    },
-    {
-      name: "c      | 2     ",
-      context: { stringValue: "c", numberValue: 2 },
       outcome: "outcome1",
     },
     {

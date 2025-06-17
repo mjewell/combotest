@@ -2,9 +2,13 @@ type Prettify<T> = {
   [K in keyof T]: T[K];
 } & {};
 
-type WithDefaults<T extends object, D extends Partial<T>> = Prettify<
-  Omit<T, keyof D> & Required<Pick<T, keyof D & keyof T>>
->;
+type RequireKeys<T, K extends keyof T = keyof T> = Omit<T, K> &
+  Required<Pick<T, K>>;
+
+export type WithDefaults<
+  T extends object,
+  D extends Partial<T> | keyof T,
+> = Prettify<RequireKeys<T, (D extends string ? D : keyof D) & keyof T>>;
 
 function omitUndefined<T extends object>(obj: T): T {
   return Object.fromEntries(
