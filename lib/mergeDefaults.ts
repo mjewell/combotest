@@ -6,7 +6,7 @@ type RequireKeys<T, K extends keyof T = keyof T> = Omit<T, K> &
 export type WithDefaults<
   T extends object,
   D extends Partial<T> | keyof T,
-> = Prettify<RequireKeys<T, (D extends string ? D : keyof D) & keyof T>>;
+> = Prettify<RequireKeys<T, D extends keyof T ? D : keyof D & keyof T>>;
 
 function omitUndefined<T extends object>(obj: T): T {
   return Object.fromEntries(
@@ -27,7 +27,7 @@ function omitUndefined<T extends object>(obj: T): T {
  *
  * const example = ({ a = 1, b }: Options = { b: 2 }) => ({ a, b });
  * // is equivalent to
- * const example = (options: Options = { b: 2 }) => withDefaults({ a: 1 }, options);
+ * const example = (options: Options = { b: 2 }) => mergeDefaults({ a: 1 }, options);
  *
  * example();                       // { a: 1, b: 2 }
  * example({ b: 3 });               // { a: 1, b: 3 }
