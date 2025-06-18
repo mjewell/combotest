@@ -77,7 +77,7 @@ export class TestOutcomeMatrix<
           context,
         ) => {
           for (const dimensionValue of dimensionValuesArray) {
-            dimensionValue.apply(dimensionValue.value, context);
+            dimensionValue.apply(dimensionValue.value, context as never);
           }
           return context;
         };

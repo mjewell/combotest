@@ -8,3 +8,7 @@ type UTUnionToIntersection<U> =
 export type UnionToIntersection<U> = [U] extends [never]
   ? never
   : UTUnionToIntersection<U>;
+
+export type Prettify<T> = {
+  [K in keyof T]: T[K];
+} & {};

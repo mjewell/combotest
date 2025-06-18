@@ -1,6 +1,4 @@
-type Prettify<T> = {
-  [K in keyof T]: T[K];
-} & {};
+import type { Prettify } from "./types";
 
 type RequireKeys<T, K extends keyof T = keyof T> = Omit<T, K> &
   Required<Pick<T, K>>;

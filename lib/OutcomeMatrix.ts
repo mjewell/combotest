@@ -1,20 +1,22 @@
 import type { Dimension } from "./dimensions";
 import { type WithDefaults, mergeDefaults } from "./mergeDefaults";
+import type { Prettify } from "./types";
 import { mapValues } from "./utils";
 
 type Value<D extends Dimension<unknown, never>> = D["values"][number];
 
-type Values<D extends Record<string, Dimension<unknown, never>>> = {
-  [K in keyof D]: Value<D[K]>;
-};
+type Values<D extends Record<string, Dimension<unknown, never>>> = Prettify<{
+  [K in keyof D & string]: Value<D[K]>;
+}>;
 
 type DimensionValue<D extends Dimension<unknown, never>> = D & {
   value: Value<D>;
 };
 
-type DimensionValues<D extends Record<string, Dimension<unknown, never>>> = {
-  [K in keyof D]: DimensionValue<D[K]>;
-};
+type DimensionValues<D extends Record<string, Dimension<unknown, never>>> =
+  Prettify<{
+    [K in keyof D & string]: DimensionValue<D[K]>;
+  }>;
 
 export type Options<
   Dimensions extends Record<string, Dimension<unknown, never>>,

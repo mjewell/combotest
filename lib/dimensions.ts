@@ -1,4 +1,4 @@
-import { mergeDefaults } from "./mergeDefaults";
+import { type WithDefaults, mergeDefaults } from "./mergeDefaults";
 
 export type DimensionDef<T, Context> = {
   /** a human-readable header that will show at the top of the table in the test logs */
@@ -23,7 +23,16 @@ export type DimensionDef<T, Context> = {
   apply?(value: T, context: Context): void;
 };
 
-export type Dimension<T, Context> = Required<DimensionDef<T, Context>>;
+const defaults = {
+  formatValue: (value) => String(value),
+  applyInDescribe: () => {},
+  apply: () => {},
+} satisfies Partial<DimensionDef<unknown, never>>;
+
+export type Dimension<T, Context> = WithDefaults<
+  DimensionDef<T, Context>,
+  typeof defaults
+>;
 
 export type DimensionContext<D extends Dimension<unknown, never>> =
   D extends Dimension<unknown, infer C> ? C : never;
@@ -35,12 +44,5 @@ export function createDimension<const T, Context = never>(
     throw new Error("Dimensions must have at least one value defined");
   }
 
-  return mergeDefaults(
-    {
-      formatValue: (value) => String(value),
-      applyInDescribe: () => {},
-      apply: () => {},
-    },
-    def,
-  );
+  return mergeDefaults(defaults, def);
 }
