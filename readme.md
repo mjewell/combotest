@@ -74,6 +74,7 @@ outcomeMatrix.testOutcomes((applyDimensions, outcome) => {
     // then call your outcome-specific assertion
     assertion();
   });
+});
 ```
 
 This will generate the following tests:

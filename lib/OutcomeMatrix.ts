@@ -125,7 +125,7 @@ export class OutcomeMatrix<
       dimensionValues: DimensionValues<Dimensions>,
       outcome: Outcomes,
     ) => void,
-    opts: Options<Dimensions, Outcomes> = {},
+    opts: Options<Dimensions, Outcomes>,
   ) {
     const options = mergeDefaults(
       { order: "outcomes", only: () => true },

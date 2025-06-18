@@ -61,7 +61,7 @@ export class TestOutcomeMatrix<
       applyDimensions: ApplyDimensionsCallback<Dimensions>,
       outcome: Outcomes,
     ) => void,
-    options: Options<Dimensions, Outcomes> = {},
+    options: Options<Dimensions, Outcomes>,
   ) {
     this.forEach((dimensionValues, outcome) => {
       const dimensionValuesArray = Object.values(dimensionValues);
@@ -70,7 +70,7 @@ export class TestOutcomeMatrix<
       );
       describe(description, () => {
         for (const dimensionValue of dimensionValuesArray) {
-          dimensionValue.applyInDescribe?.(dimensionValue.value);
+          dimensionValue.applyInDescribe(dimensionValue.value);
         }
 
         const applyDimensions: ApplyDimensionsCallback<Dimensions> = (

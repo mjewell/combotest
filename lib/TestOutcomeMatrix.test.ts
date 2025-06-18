@@ -7,8 +7,8 @@ vi.mock(import("./mockableVitest"), async (importActual) => {
   const actual = await importActual();
   return {
     ...actual,
-    describe: vi.fn() as unknown as SuiteAPI,
-    it: vi.fn() as unknown as TestAPI,
+    describe: vi.fn((_, f) => f()) as unknown as SuiteAPI,
+    it: vi.fn((_, f) => f()) as unknown as TestAPI,
   };
 });
 
@@ -77,12 +77,8 @@ it("correctly infers the type of a dimension as a const", () => {
   });
 
   outcomeMatrix.defineOutcomes(({ string }) => {
-    // @ts-expect-error
-    if (string === "d") {
-      return "outcome1";
-    }
-
-    return "outcome2";
+    expectTypeOf(string).toEqualTypeOf<"a" | "b" | "c">();
+    return "outcome1";
   });
 });
 
@@ -118,6 +114,7 @@ it("enforces that applyDimensions receives the correct context type", () => {
   });
 
   outcomeMatrix.testOutcomes((applyDimensions) => {
+    applyDimensions({ exampleValue: "", anotherValue: 0 });
     expectTypeOf(applyDimensions)
       .parameter(0)
       .branded.toEqualTypeOf<Context1 & Context2>();
@@ -414,5 +411,145 @@ it("generates good spacing with formatValue and values longer than the header", 
     expect(nameFn).toHaveBeenNthCalledWith(index + 2, expectation.name);
     expect(contextFn).toHaveBeenNthCalledWith(index + 1, expectation.context);
     expect(outcomeFn).toHaveBeenNthCalledWith(index + 1, expectation.outcome);
+  }
+});
+
+it("can generate tests ordered by dimensions instead of outcomes", () => {
+  const outcomeMatrix = new TestOutcomeMatrix({
+    dimensions: {
+      string: exampleDimensions.string,
+      number: exampleDimensions.number,
+    },
+    outcomes: ["outcome1", "outcome2"],
+    defaultOutcome: "outcome1",
+  });
+
+  outcomeMatrix.defineOutcomes(({ string, number }) => {
+    if (string === "a" && number === 1) {
+      return "outcome2";
+    }
+    if (string === "b" && number === 2) {
+      return "outcome2";
+    }
+  });
+
+  const nameFn = vi.fn();
+
+  vi.mocked(describeImport).mockImplementation((name, fn) => {
+    nameFn(name);
+    return (fn as unknown as () => SuiteCollector)();
+  });
+
+  const contextFn = vi.fn();
+  const outcomeFn = vi.fn();
+
+  outcomeMatrix.testOutcomes(
+    (applyDimensions, outcome) => {
+      const context = applyDimensions({ stringValue: "", numberValue: 0 });
+      contextFn(context);
+      outcomeFn(outcome);
+    },
+    { order: "dimensions" },
+  );
+
+  const expectations = [
+    {
+      name: "a      | 1     ",
+      context: { stringValue: "a", numberValue: 1 },
+      outcome: "outcome2",
+    },
+    {
+      name: "a      | 2     ",
+      context: { stringValue: "a", numberValue: 2 },
+      outcome: "outcome1",
+    },
+    {
+      name: "a      | 3     ",
+      context: { stringValue: "a", numberValue: 3 },
+      outcome: "outcome1",
+    },
+    {
+      name: "b      | 1     ",
+      context: { stringValue: "b", numberValue: 1 },
+      outcome: "outcome1",
+    },
+    {
+      name: "b      | 2     ",
+      context: { stringValue: "b", numberValue: 2 },
+      outcome: "outcome2",
+    },
+    {
+      name: "b      | 3     ",
+      context: { stringValue: "b", numberValue: 3 },
+      outcome: "outcome1",
+    },
+    {
+      name: "c      | 1     ",
+      context: { stringValue: "c", numberValue: 1 },
+      outcome: "outcome1",
+    },
+    {
+      name: "c      | 2     ",
+      context: { stringValue: "c", numberValue: 2 },
+      outcome: "outcome1",
+    },
+    {
+      name: "c      | 3     ",
+      context: { stringValue: "c", numberValue: 3 },
+      outcome: "outcome1",
+    },
+  ];
+
+  expect(nameFn).toHaveBeenCalledTimes(expectations.length + 1);
+  expect(contextFn).toHaveBeenCalledTimes(expectations.length);
+  expect(outcomeFn).toHaveBeenCalledTimes(expectations.length);
+
+  expect(nameFn).toHaveBeenNthCalledWith(1, "String | Number");
+  for (const [index, expectation] of expectations.entries()) {
+    expect(nameFn).toHaveBeenNthCalledWith(index + 2, expectation.name);
+    expect(contextFn).toHaveBeenNthCalledWith(index + 1, expectation.context);
+    expect(outcomeFn).toHaveBeenNthCalledWith(index + 1, expectation.outcome);
+  }
+});
+
+it("calls applyInDescribe in the describe block", () => {
+  const inDescribeFn = vi.fn();
+
+  const outcomeMatrix = new TestOutcomeMatrix({
+    dimensions: {
+      inDescribe: createDimension({
+        header: "Header",
+        values: ["a", "b", "c"],
+        applyInDescribe(value) {
+          inDescribeFn(value);
+        },
+      }),
+    },
+    outcomes: ["outcome1", "outcome2"],
+    defaultOutcome: "outcome1",
+  });
+
+  const nameFn = vi.fn();
+
+  vi.mocked(describeImport).mockImplementation((name, fn) => {
+    nameFn(name);
+    return (fn as unknown as () => SuiteCollector)();
+  });
+
+  // intentionally not calling applyDimensions here to applyInDescribe is called outside of that
+  outcomeMatrix.testOutcomes(() => {});
+
+  const expectations = ["a", "b", "c"];
+
+  expect(nameFn).toHaveBeenCalledTimes(expectations.length + 1);
+  expect(inDescribeFn).toHaveBeenCalledTimes(expectations.length);
+
+  expect(nameFn).toHaveBeenNthCalledWith(1, "Header");
+  for (const [index, expectation] of expectations.entries()) {
+    expect(nameFn).toHaveBeenNthCalledWith(
+      index + 2,
+      expectation.padEnd(6, " "),
+    );
+    expect(inDescribeFn).toHaveBeenNthCalledWith(index + 1, expectation);
   }
 });
