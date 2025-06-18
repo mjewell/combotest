@@ -5,7 +5,7 @@ import type { Dimension } from "./dimensions";
 // that looks like it shouldn't be doing anything - specifically `{ [K in keyof D & string]: ... }`
 it("doesn't type the dimensionValues as any in a subclass", () => {
   class TestClass<
-    Dimensions extends Record<string, Dimension<unknown, never>>,
+    Dimensions extends Record<string, Dimension>,
     Outcomes extends string,
   > extends OutcomeMatrix<Dimensions, Outcomes> {
     whatever() {

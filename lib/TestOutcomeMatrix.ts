@@ -5,14 +5,12 @@ import type { UnionToIntersection } from "./types";
 import { type Options, OutcomeMatrix } from "./OutcomeMatrix";
 import type { Dimension, DimensionContext } from "./dimensions";
 
-type ApplyDimensionsCallback<
-  D extends Record<string, Dimension<unknown, never>>,
-> = (
+type ApplyDimensionsCallback<D extends Record<string, Dimension>> = (
   context: UnionToIntersection<DimensionContext<D[keyof D]>>,
 ) => typeof context;
 
 export class TestOutcomeMatrix<
-  Dimensions extends Record<string, Dimension<unknown, never>>,
+  Dimensions extends Record<string, Dimension>,
   Outcomes extends string,
 > extends OutcomeMatrix<Dimensions, Outcomes> {
   private columnWidths: number[];

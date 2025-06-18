@@ -3,23 +3,22 @@ import { type WithDefaults, mergeDefaults } from "./mergeDefaults";
 import type { Prettify } from "./types";
 import { mapValues } from "./utils";
 
-type Value<D extends Dimension<unknown, never>> = D["values"][number];
+type Value<D extends Dimension> = D["values"][number];
 
-type Values<D extends Record<string, Dimension<unknown, never>>> = Prettify<{
+type Values<D extends Record<string, Dimension>> = Prettify<{
   [K in keyof D & string]: Value<D[K]>;
 }>;
 
-type DimensionValue<D extends Dimension<unknown, never>> = D & {
+type DimensionValue<D extends Dimension> = D & {
   value: Value<D>;
 };
 
-type DimensionValues<D extends Record<string, Dimension<unknown, never>>> =
-  Prettify<{
-    [K in keyof D & string]: DimensionValue<D[K]>;
-  }>;
+type DimensionValues<D extends Record<string, Dimension>> = Prettify<{
+  [K in keyof D & string]: DimensionValue<D[K]>;
+}>;
 
 export type Options<
-  Dimensions extends Record<string, Dimension<unknown, never>>,
+  Dimensions extends Record<string, Dimension>,
   Outcomes extends string,
 > = {
   order?: "dimensions" | "outcomes";
@@ -27,12 +26,12 @@ export type Options<
 };
 
 type ResolvedOptions<
-  Dimensions extends Record<string, Dimension<unknown, never>>,
+  Dimensions extends Record<string, Dimension>,
   Outcomes extends string,
 > = WithDefaults<Options<Dimensions, Outcomes>, "order" | "only">;
 
 export class OutcomeMatrix<
-  Dimensions extends Record<string, Dimension<unknown, never>>,
+  Dimensions extends Record<string, Dimension>,
   Outcomes extends string,
 > {
   public dimensions: Dimensions;

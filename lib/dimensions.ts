@@ -1,6 +1,6 @@
 import { type WithDefaults, mergeDefaults } from "./mergeDefaults";
 
-export type DimensionDef<T, Context> = {
+type DimensionDef<T = unknown, Context = never> = {
   /** a human-readable header that will show at the top of the table in the test logs */
   header: string;
   /**
@@ -27,15 +27,19 @@ const defaults = {
   formatValue: (value) => String(value),
   applyInDescribe: () => {},
   apply: () => {},
-} satisfies Partial<DimensionDef<unknown, never>>;
+} satisfies Partial<DimensionDef>;
 
-export type Dimension<T, Context> = WithDefaults<
+export type Dimension<T = unknown, Context = never> = WithDefaults<
   DimensionDef<T, Context>,
   typeof defaults
 >;
 
-export type DimensionContext<D extends Dimension<unknown, never>> =
-  D extends Dimension<unknown, infer C> ? C : never;
+export type DimensionContext<D extends Dimension> = D extends Dimension<
+  unknown,
+  infer C
+>
+  ? C
+  : never;
 
 export function createDimension<const T, Context = never>(
   def: DimensionDef<T, Context>,
