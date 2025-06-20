@@ -1,5 +1,5 @@
 import type { Dimension } from "./dimensions";
-import { type WithDefaults, mergeDefaults } from "./mergeDefaults";
+import { mergeDefaults, type WithDefaults } from "./mergeDefaults";
 import type { Prettify } from "./types";
 import { mapValues } from "./utils";
 

@@ -1,4 +1,4 @@
-import { type WithDefaults, mergeDefaults } from "./mergeDefaults";
+import { mergeDefaults, type WithDefaults } from "./mergeDefaults";
 
 type DimensionDef<T = unknown, Context = never> = {
   /** a human-readable header that will show at the top of the table in the test logs */

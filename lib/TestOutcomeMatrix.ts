@@ -1,9 +1,9 @@
 import { expect } from "vitest";
+import type { Dimension, DimensionContext } from "./dimensions";
 import { describe, it } from "./mockableVitest";
-import type { UnionToIntersection } from "./types";
 
 import { type Options, OutcomeMatrix } from "./OutcomeMatrix";
-import type { Dimension, DimensionContext } from "./dimensions";
+import type { UnionToIntersection } from "./types";
 
 type ApplyDimensionsCallback<D extends Record<string, Dimension>> = (
   context: UnionToIntersection<DimensionContext<D[keyof D]>>,

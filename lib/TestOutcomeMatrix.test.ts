@@ -1,7 +1,7 @@
 import type { SuiteAPI, SuiteCollector, TestAPI } from "vitest";
-import { TestOutcomeMatrix } from "./TestOutcomeMatrix";
 import { createDimension } from "./dimensions";
 import { describe as describeImport } from "./mockableVitest";
+import { TestOutcomeMatrix } from "./TestOutcomeMatrix";
 
 vi.mock(import("./mockableVitest"), async (importActual) => {
   const actual = await importActual();
