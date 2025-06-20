@@ -18,11 +18,6 @@
     "enabled": true,
     "rules": {
       "recommended": true,
-      "correctness": {
-        "noUnusedVariables": "error",
-        "noUnusedImports": "error",
-        "noUnusedPrivateClassMembers": "error"
-      },
       "style": {
         "noParameterAssign": "error",
         "useAsConstAssertion": "error",
@@ -35,11 +30,6 @@
         "noInferrableTypes": "error",
         "noUselessElse": "error"
       }
-    }
-  },
-  "javascript": {
-    "formatter": {
-      "quoteStyle": "double"
     }
   }
 }
